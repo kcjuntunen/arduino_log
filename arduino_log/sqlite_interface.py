@@ -140,19 +140,19 @@ reed_switch1, reed_switch2, light_level, humidity, temperature) VALUES
                 print "Error inserting data."
 
 class sqlite_reader:
-    def __init__(self, db_filename, json_template):
+    def __init__(self, db_filename, fields):
         try:
             self.conn = sql.connect(db_filename)
         except sql.Error, e:
             print "Error %s:" % e.args[0]
             sys.exit(1)
 
-        self.fields = ', '.join(dig_fields(json_template))
+        self.fields = fields
             
     def get_last_record(self):
         with self.conn:
             cur = self.conn.cursor()
-            sql = "SELECT " + self.fields + " FROM snapshot_log ORDER BY timestamp DESC LIMIT 1;"
+            sql = "SELECT " + ', '.join(self.fields) + " FROM snapshot_log ORDER BY id DESC LIMIT 1;"
             cur.execute(sql)
             rows = cur.fetchall()
             return rows
@@ -160,7 +160,7 @@ class sqlite_reader:
     def get_last_record_dict(self):
         with self.conn:
             cur = self.conn.cursor()
-            sql = "SELECT " + self.fields + " FROM snapshot_log ORDER BY timestamp DESC LIMIT 1;"
+            sql = "SELECT " + ', '.join(self.fields) + " FROM snapshot_log ORDER BY id DESC LIMIT 1;"
             cur.execute(sql)
             rows = cur.fetchall()
             return dict_factory(cur, rows[0])
