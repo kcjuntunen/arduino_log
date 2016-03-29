@@ -1,8 +1,6 @@
 from unittest import TestCase
 import random
 from arduino_log import sqlite_interface as sqi
-#from arduino_log import thingspeak
-#from arduino_log import arduino_log
 
 SAMPLE_JSON = '{"a": 5847, "b": -42, "c": 482}'
 fields = ['a', 'b', 'c']
@@ -31,8 +29,6 @@ class TestCreate(TestCase):
         self.s.insert_data('{"a": 657, "b": ' + str(x)  + ', "c": 754}')
 
         y = self.q.get_last_record()[0]
-        for i in y:
-            print(i)
         self.assertEqual(y[1], x)
 
     def test_read_data(self):

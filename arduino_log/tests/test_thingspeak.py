@@ -16,12 +16,11 @@ class TestCreate(TestCase):
     def test_create_url(self):
         t = thingspeak.ThingspeakInterface('/home/juntunenkc/git/arduino_log/etc/arduino_log.json')
         u = t.create_url(self.q.get_last_record_dict())
-        print(u)
-        self.assertGreater(len(u), 1)
+        self.assertEquals(u, "field2=482&field3=-42&field1=5847&api_key=")
 
-    def test_send_data(self):
-        t = thingspeak.ThingspeakInterface('/home/juntunenkc/git/arduino_log/etc/arduino_log.json')
-        t.send_data()
+    #def test_send_data(self):
+        #t = thingspeak.ThingspeakInterface('/home/juntunenkc/git/arduino_log/etc/arduino_log.json')
+        #t.send_data()
 
     def tearDown(self):
         import os
