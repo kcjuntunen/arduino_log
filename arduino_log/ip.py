@@ -53,15 +53,16 @@ def all_interfaces():
 
 def broadcast_ip():
     global config_data
-    with open('/etc/thingspeak.json') as data_file:
+    with open('/etc/arduino_log.json') as data_file:
         config_data = json.load(data_file)
 
-    while 'wlan0' not in all_interfaces():
-        time.sleep(15)
-
-    send_email("Unit: " + config_data["unit"] + " booted.",
-               "IP: " + get_ip_address('wlan0'))
-
+    if config_data["broadcast_ip"]:        
+        while 'wlan0' not in all_interfaces():
+            time.sleep(15)
+        send_email("Unit: " + config_data["unit"] + " booted.",
+                   "IP: " + get_ip_address('wlan0'))
+    else:
+        print("Not sending...")
 
 if __name__ == "__main__":
     broadcast_ip()
