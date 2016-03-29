@@ -25,7 +25,7 @@ setup(name='arduino_log',
       ],
       include_package_data=True,
       zip_safe=False,
-      scripts=['bin/arduino_log'],
+      scripts=['bin/arduino-log', 'bin/thingspeak-loop'],
       test_suite='nose.collector',
       tests_require=['nose'],
 )

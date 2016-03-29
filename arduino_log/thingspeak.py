@@ -11,12 +11,15 @@ class ThingspeakInterface():
             self.api_key = config_data["api_key"]
             self.target_db = config_data["localDB"]
             self.labels = config_data["labels"]
+            self.timespec = config_data["thingspeak_freq"]
         self.sqlr = sqli.sqlite_reader(self.target_db, self.labels)
         self.sqlw = sqli.sqlite_writer(self.target_db, self.labels)
         self.s = sched.scheduler(time.time, time.sleep)
 
     def tweet(self, message):
         """Use the Thingspeak API to tweet."""
+        if self.api_key == "":
+            return False
         params = urllib.urlencode(
             {'api_key': self.api_key,
              'status': message})
@@ -51,11 +54,13 @@ class ThingspeakInterface():
             data["field" + str(count)] = data_dict[field]
             count += 1
 
-        data["api_key"] = self.api_key
+        data["key"] = self.key
         return urllib.urlencode(data)
         
     def send_data(self):
         """Send data to thingspeak."""
+        if self.key == "":
+            return False
         params = self.create_url(self.sqlr.get_last_record_dict())
         headers = {"Content-type": "application/x-www-form-urlencoded",
                    "Accept": "text/plain"}
@@ -73,8 +78,9 @@ class ThingspeakInterface():
             #return False, "Connection failed: {0}".format(http_exception.message)
             self.s.enter(240, 1, self.send_data, ())
 
-    def start_loop(self, timespec):
-        if timespec < 15:
+    def start_loop(self):
+        timespec = self.timespec 
+        if  timespec < 15:
             timespec = 15
         self.s.enter(timespec, 1, self.send_data, ())
         self.s.run()
