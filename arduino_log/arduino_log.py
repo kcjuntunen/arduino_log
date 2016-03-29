@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 import httplib, urllib, os, datetime, serial, smtplib, json
-import sched, time
 import sqlite_interface as sqli
+import thingspeak as thsp
 import utility as u
 
 class arduino_log():
     """For processing Arduino output."""
-    def __init__(self, config_file, json_template):
+    def __init__(self, config_file):
         """Variable-ize everything in the thingspeak config file."""
         with open(config_file) as data_file:
             self.config_data = json.load(data_file)
@@ -20,9 +20,12 @@ class arduino_log():
             self.threshold = self.config_data["light_threshold"]
             self.day_start = self.config_data["day_start"]
             self.day_end = self.config_data["day_end"]
-            #self.ser = serial.Serial(self.config_data["serial_port"],
-            #                         self.config_data["baud"])
-        self.sqlw = sqli.sqlite_writer(self.local_db, json_template)
+            self.alerts = self.config_data["alerts"]
+            self.ser = serial.Serial(self.config_data["serial_port"],
+                                     self.config_data["baud"])
+        self.sqlw = sqli.sqlite_writer(self.local_db,
+                                       self.config_data["labels"])
+        self.thingspeak = thsp.ThingspeakInterface(config_file)
         self.sent_on = True
         self.sent_off = False
         self.labels = self.config_data["labels"]
@@ -89,13 +92,13 @@ class arduino_log():
                 msg = "The lights are out in {0}. ({1} UTC)".format(
                     self.unit, today.strftime('%b %d %Y %H:%M'))
                 t = 0
-                if self.tweet(msg):
+                if self.thingspeak.tweet(msg):
                     t = 1
                 e = 0
                 if self.ok_to_send() and self.send_email(paramsd['status'], msg):
                     e = 1
 
-                self.sw.insert_alert("Lights are out.", e, t, 1)
+                self.sqlw.insert_alert("Lights are out.", e, t, 1)
                 self.sent_off = True
                 self.sent_on = False
 
@@ -106,13 +109,13 @@ class arduino_log():
                 msg = "The lights are back on in {0}. ({1} UTC)".format(
                     self.unit, today.strftime('%b %d %Y %H:%M'))
                 t = 0
-                if self.tweet(msg):
+                if self.thingspeak.tweet(msg):
                     t = 1
                 e = 0
                 if self.ok_to_send() and self.send_email(paramsd['status'], msg):
                     e = 1
 
-                self.sw.insert_alert("Lights are back on.", 0, t, 1)
+                self.sqlw.insert_alert("Lights are back on.", 0, t, 1)
                 self.sent_on = True
                 self.sent_off = False
 
@@ -151,7 +154,15 @@ class arduino_log():
         while True:
             line = ser.readline()
             data = self.decode_string(line)
-            sqlw.insert_dict(data)
+            self.check_alerts(data)
+            self.sqlw.insert_dict(data)
+
+    def check_alerts(self, datadict):
+        for a in self.alerts:
+            if datadict[a] > abs(self.config_data[a]):
+                if self.ok_to_send():
+                    self.send_email(self.unit, a + " exceeded.")
+                    self.thingspeak.tweet(a + " exceeded in " + self.unit)
 
     def decode_string(self, line):
         data = {}
@@ -172,15 +183,13 @@ class arduino_log():
             except Exception as e:
                 self.sqlw.insert_alert("Exception: {0}".format(e), 0, 0, 0)
 
-    def loop(self):
-        s = sched(15, 1, send_data, ())
-
-    def process_data(self, d):
-        None
-
-    
-if __name__ == "__main__":
-    import ip
+def start():    
+    import ip as ip
     ip.broadcast_ip()
-    moni = arduino_log()
+    moni = arduino_log('/etc/ardino_log.json')
     moni.loop()
+
+
+if __name__ == "__main__":
+    start()
+
