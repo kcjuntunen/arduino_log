@@ -1,18 +1,19 @@
 {
-    "serial_port": "/dev/tty",
+    "serial_port": "/dev/ttyACM0",
     "baud": 9600,
+    "broadcast_ip": true,
     "key": "",
     "api_key": "",
     "localDB": "/tmp/test.db",
     "unit": "Raspberry PI",
     "smtp_server": "",
     "sender": "",
-    "light_threshold": -650,
-    "obstruct_threshold": 1.2,
     "recipients": [""],
     "timezone": "EST",
     "day_start": "13:00",
     "day_end": "20:30",
     "labels": ["a", "b", "c"],
-    "alerts": ["light_threshold", "obstruct_threshold"]
+    "alerts": ["a", "c"],
+    "a": 5000,
+    "c": -490
 }
