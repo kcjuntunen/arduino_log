@@ -4,14 +4,15 @@ import sqlite_interface as sqli
 
 class ThingspeakInterface():
     """A class for handling Thingspeak operations."""
-    def __init__(self, config_data_file, json_template):
+    def __init__(self, config_data_file):
         with open(config_data_file) as config_file_handle:
             config_data = json.load(config_file_handle)
             self.key = config_data["key"]
             self.api_key = config_data["api_key"]
             self.target_db = config_data["localDB"]
-        self.sqlr = sqli.sqlite_reader(self.target_db, json_template)
-        self.sqlw = sqli.sqlite_writer(self.target_db, json_template)
+            self.labels = config_data["labels"]
+        self.sqlr = sqli.sqlite_reader(self.target_db, self.labels)
+        self.sqlw = sqli.sqlite_writer(self.target_db, self.labels)
         self.s = sched.scheduler(time.time, time.sleep)
 
     def tweet(self, message):
@@ -55,7 +56,6 @@ class ThingspeakInterface():
         
     def send_data(self):
         """Send data to thingspeak."""
-        #data = json.loads(json_string)
         params = self.create_url(self.sqlr.get_last_record_dict())
         headers = {"Content-type": "application/x-www-form-urlencoded",
                    "Accept": "text/plain"}
@@ -73,6 +73,8 @@ class ThingspeakInterface():
             #return False, "Connection failed: {0}".format(http_exception.message)
             self.s.enter(240, 1, self.send_data, ())
 
-    def start_loop(self, json_string, timespec):
-        self.s.enter(30, 1, self.send_data, ())
+    def start_loop(self, timespec):
+        if timespec < 15:
+            timespec = 15
+        self.s.enter(timespec, 1, self.send_data, ())
         self.s.run()
