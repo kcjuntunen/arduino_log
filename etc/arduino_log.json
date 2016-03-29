@@ -1,0 +1,17 @@
+{
+    "serial_port": "/dev/ttyS0",
+    "baud": 9600,
+    "key": "",
+    "api_key": "",
+    "localDB": "/tmp/test.db",
+    "unit": "Raspberry PI",
+    "smtp_server": "",
+    "sender": "",
+    "light_threshold": -650,
+    "obstruct_threshold": 1.2,
+    "recipients": [""],
+    "timezone": "EST",
+    "day_start": "13:00",
+    "day_end": "20:30",
+    "labels": ["a", "b", "c"]
+}

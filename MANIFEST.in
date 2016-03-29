@@ -1,0 +1,2 @@
+include README.org
+include etc/arduino_log.json
