@@ -1,5 +1,5 @@
 {
-    "serial_port": "/dev/ttyS0",
+    "serial_port": "/dev/tty",
     "baud": 9600,
     "key": "",
     "api_key": "",
@@ -13,5 +13,6 @@
     "timezone": "EST",
     "day_start": "13:00",
     "day_end": "20:30",
-    "labels": ["a", "b", "c"]
+    "labels": ["a", "b", "c"],
+    "alerts": ["light_threshold", "obstruct_threshold"]
 }
