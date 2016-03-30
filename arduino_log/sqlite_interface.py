@@ -5,10 +5,12 @@ import utility as u
 
 class sqlite_writer:
     def __init__(self, db_filename, fields):
-        """We of course need a target filename for an sqlite db. 
+        """
+We of course need a target filename for an sqlite db. 
 Secondly, we need a json template string. We can create a table to
 pick up whatever the Arduino is laying down based on what it's laying
-down."""
+down.
+"""
         self.db_filename = db_filename
 
         try:
@@ -35,8 +37,9 @@ down."""
     def show_tables(self):
         with self.conn:
             cur = self.conn.cursor()
-            cur.execute("""select name from sqlite_master where 
-type = 'table';""")
+            sql = ("SELECT NAME FROM sqlite_master WHERE "
+                   "type = 'table';")
+            cur.execute(sql)
             return cur.fetchall()
 
     def print_tables(self):
@@ -49,9 +52,12 @@ type = 'table';""")
                 print ("{0}.) {1}".format(cnt, x[0]))
 
     def create_table(self, fields):
-        create_sql = """CREATE TABLE IF NOT EXISTS snapshot_log 
-(id INTEGER PRIMARY KEY ASC, timestamp, """
-        create_sql += ', '.join(fields) + ');'
+        f = ', '.join(fields)
+        create_sql = ("CREATE TABLE IF NOT EXISTS snapshot_log " 
+                      "(id INTEGER PRIMARY KEY ASC, timestamp, " +
+                      f +
+                      ")")
+
         with self.conn:
             cur = self.conn.cursor()
             cur.execute(create_sql)
@@ -59,14 +65,19 @@ type = 'table';""")
     def create_message_table(self):
         with self.conn:
             cur = self.conn.cursor()
-            cur.execute("""CREATE TABLE IF NOT EXISTS message_log 
-(id INTEGER PRIMART KEY ASC, timestamp, message, email, tweet, status)""")
+            sql = ("CREATE TABLE IF NOT EXISTS message_log "
+                   "(id INTEGER PRIMARY KEY ASC, timestamp, message, "
+                   "email, tweet, status)")
+            cur.execute(sql)
 
     def insert_data(self, json_string):
         json_ob = json.loads(json_string)
         fields = ', '.join([f for f in json_ob])
-        values = ', '.join([str(json_ob [u.unicode_to_string(f)]) for f in json_ob])
-        sql = "INSERT INTO snapshot_log (timestamp, " + fields + ") VALUES (datetime(\'now\'), " + values  + ")"
+        values = ', '.join([str(json_ob [u.unicode_to_string(f)])
+                            for f in json_ob])
+        sql = ("INSERT INTO snapshot_log (timestamp, " +
+               fields  + ") VALUES (datetime(\'now\'), " + values  +
+               ")")
         
         with self.conn:
             cur = self.conn.cursor()
@@ -75,7 +86,8 @@ type = 'table';""")
     def insert_dict(self, dict_data):
         fields = ', '.join([f for f in dict_data])
         values = ', '.join([str(dict_data[f]) for f in dict_data])
-        sql = "INSERT INTO snapshot_log (timestamp, " + fields + ") VALUES (datetime(\'now\'), " + values  + ")"
+        sql = ("INSERT INTO snapshot_log (timestamp, " + fields +
+               ") VALUES (datetime(\'now\'), " + values + " )")
         
         with self.conn:
             cur = self.conn.cursor()
@@ -84,9 +96,10 @@ type = 'table';""")
     def insert_alert(self, msg, email, tweet, stat):
         with self.conn:
             cur = self.conn.cursor()
-            sql = """INSERT INTO message_log (timestamp, message, 
-email, tweet, status) VALUES (datetime(\'now\'), \"{0}\", {1}, {2}, 
-{3});""".format(msg, email, tweet, stat)
+            sql = ("INSERT INTO message_log (timestamp, message, "
+                   "email, tweet, status) VALUES "
+                   "(datetime(\'now\'), \"{0}\", {1}, {2}, {3});".
+                   format(msg, email, tweet, stat))
 
             try:
                 cur.execute(sql)
@@ -106,7 +119,8 @@ class sqlite_reader:
     def get_last_record(self):
         with self.conn:
             cur = self.conn.cursor()
-            sql = "SELECT " + ', '.join(self.fields) + " FROM snapshot_log ORDER BY id DESC LIMIT 1;"
+            sql = ("SELECT " + ', '.join(self.fields) +
+                   " FROM snapshot_log ORDER BY id DESC LIMIT 1;")
             cur.execute(sql)
             rows = cur.fetchall()
             return rows
@@ -114,7 +128,8 @@ class sqlite_reader:
     def get_last_record_dict(self):
         with self.conn:
             cur = self.conn.cursor()
-            sql = "SELECT " + ', '.join(self.fields) + " FROM snapshot_log ORDER BY id DESC LIMIT 1;"
+            sql = ("SELECT " + ', '.join(self.fields) +
+                   " FROM snapshot_log ORDER BY id DESC LIMIT 1;")
             cur.execute(sql)
             rows = cur.fetchall()
             return dict_factory(cur, rows[0])
@@ -126,8 +141,10 @@ def dig_fields(json_data):
     return fields
 
 def dict_factory(cursor, row):
-    """I got this snippet from <http://www.cdotson.com/2014/06/
-generating-json-documents-from-sqlite-databases-in-python/>"""
+    """
+I got this snippet from <http://www.cdotson.com/2014/06/
+generating-json-documents-from-sqlite-databases-in-python/>
+    """
     dic = {}
     for idx, col in enumerate(cursor.description):
         if isinstance(row[idx], unicode):
