@@ -3,5 +3,6 @@
 *~
 \#*
 .eggs
+.coverage
 dist/
 build/
