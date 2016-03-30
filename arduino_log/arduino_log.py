@@ -97,7 +97,7 @@ class arduino_log():
             try:
                 b = u.unicode_to_string(a)
                 if abs(datadict [b]) < abs(self.config_data[b]):
-                    if self.ok_to_send() and not self.sent[b]:
+                    if self.ok_to_send() and self.sent[b]:
                         message = b + " returned to normal in " + self.unit
                         esent = 0
                         if self.send_email(self.unit, message):
