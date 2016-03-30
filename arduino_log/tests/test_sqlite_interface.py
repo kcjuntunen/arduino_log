@@ -13,10 +13,10 @@ class TestCreate(TestCase):
         x = random.randrange(1, 500000) / 1000.0
         self.s.insert_data('{"a": 5847, "b": ' + str(x)  + ', "c": 482}')
         self.q = sqi.sqlite_reader("/tmp/test.db", fields)
-        
-    def test_sqlite_create(self):
-        self.s.print_tables()
 
+    def test_get_db_version(self):
+        self.s.get_db_version()
+        
     def test_insert_data(self):
         x = 0
         for i in range(500):
