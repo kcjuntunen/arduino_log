@@ -2,10 +2,7 @@ import sqlite3 as sql
 import json
 import sys, datetime
 import utility as u
-  # CREATE TABLE IF NOT EXISTS snapshot_log (id INTEGER PRIMARY KEY ASC, timestamp, obstruction, reed_switch1, reed_switch2, light_level, humidity, temperature, pressure, light_threshold);
 
-  # CREATE TABLE IF NOT EXISTS message_log (id INTEGER PRIMART KEY ASC, timestamp, message, email, tweet, status)
-# (setq python-indent-offset 4)
 class sqlite_writer:
     def __init__(self, db_filename, fields):
         """We of course need a target filename for an sqlite db. 
@@ -65,16 +62,6 @@ type = 'table';""")
             cur.execute("""CREATE TABLE IF NOT EXISTS message_log 
 (id INTEGER PRIMART KEY ASC, timestamp, message, email, tweet, status)""")
 
-    def insert_data2(self, obstruct, reed1, reed2, ll, hum, temp, press, thresh):
-        with self.conn:
-            cur = self.conn.cursor()
-            sql = """INSERT INTO snapshot_log (timestamp, obstruction,
-reed_switch1, reed_switch2, light_level, humidity, temperature, 
-pressure, light_threshold) VALUES (datetime(\'now\'), {0}, {1}, {2}, 
-{3}, {4}, {5}, {6}, {7});""".format(obstruct, reed1, reed2, ll, hum, 
-temp, press, thresh)
-            cur.execute(sql)
-
     def insert_data(self, json_string):
         json_ob = json.loads(json_string)
         fields = ', '.join([f for f in json_ob])
@@ -105,39 +92,6 @@ email, tweet, status) VALUES (datetime(\'now\'), \"{0}\", {1}, {2},
                 cur.execute(sql)
             except:
                 print ("Couldn't insert\nsql={0}".format(sql))
-
-    def insert_data_old(self, obstruct, reed1, reed2, ll, hum, temp):
-        with self.conn:
-            cur = self.conn.cursor()
-            sql = """INSERT INTO snapshot_log (timestamp, obstruction,
-reed_switch1, reed_switch2, light_level, humidity, temperature) VALUES
-(datetime(\'now\'), {0}, {1}, {2}, {3}, {4}, {5});""".format(obstruct, reed1, reed2, ll, hum, temp)
-
-#, " + obstruct + ", " + reed1 + "\', \'" + reed2 + "\', \'" + ll + "\', \'" + hum + "\', \'" + temp + "\';"
-
-            try:
-                cur.execute(sql)
-            except:
-                print ("Couldn't insert\nsql={0}".format(sql))
-
-    def insert_ser_line(self, line):
-        data = str.split(line, ":")
-        if len(data) < 8:
-            print "%s doesn't have enough fields." % line
-        else:
-            self.insert_data(data[1], data[2], data[3], data[4],
-                             data[5], data[6], data[7], data[8])
-
-    def insert_ser_line_old(self, line):
-        data = str.split(line, ":")
-        if len(data) < 6:
-            print "%s doesn't have enough fields." % line
-        else:
-            try:
-                self.insert_data_old(data[1], data[2], data[3],
-                                     data[4], data[5], data[6])
-            except:
-                print "Error inserting data."
 
 class sqlite_reader:
     def __init__(self, db_filename, fields):
@@ -176,27 +130,13 @@ def dict_factory(cursor, row):
 generating-json-documents-from-sqlite-databases-in-python/>"""
     dic = {}
     for idx, col in enumerate(cursor.description):
-        if isinstance(row [idx], unicode):
-            dic[col[0]] = u.unicode_to_string( row [idx])
-        else:                
-            dic[col[0]] = row [idx]
+        if isinstance(row[idx], unicode):
+            dic[col[0]] = u.unicode_to_string(row[idx])
+        else:
+            dic[col[0]] = row[idx]
     return dic
 
-# connection = sqlite3.connect("sample.db")
-# connection.row_factory = dict_factory
-
-# cursor = connection.cursor()
-
-# cursor.execute("select * from sample")
-
-# # fetch all or one we'll go for all.
-
-# results = cursor.fetchall()
-
-# print results
-
-# connection.close()
 if __name__ == "__main__":
-    db = sqlite_writer('1.db')
+    db = sqlite_writer('1.db', ['a', 'b', 'c'])
     print db.get_db_version()
     db.print_tables()
