@@ -12,6 +12,7 @@
     "timezone": "EST",
     "day_start": "13:00",
     "day_end": "20:30",
+    "thingspeak_freq": 30,
     "labels": ["a", "b", "c"],
     "alerts": ["a", "c"],
     "a": 5000,
