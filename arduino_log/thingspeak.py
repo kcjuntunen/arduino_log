@@ -42,11 +42,6 @@ class ThingspeakInterface():
         except httplib.HTTPException as http_exception:
             return False, http_exception.message
         
-    def create_url2(self, json_string):
-        data = json.loads(json_string)
-        params = urllib.urlencode(data)
-        return params
-
     def create_url(self, data_dict):
         data = {}
         count = 1
