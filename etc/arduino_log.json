@@ -15,6 +15,6 @@
     "thingspeak_freq": 30,
     "labels": ["a", "b", "c"],
     "alerts": ["a", "c"],
-    "a": 5000,
-    "c": -490
+    "a": [998.11, "less than"],
+    "b": [70, "less than"]
 }

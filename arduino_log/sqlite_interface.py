@@ -12,6 +12,7 @@ pick up whatever the Arduino is laying down based on what it's laying
 down.
 """
         self.db_filename = db_filename
+        self.labels = fields
 
         try:
             self.conn = sql.connect(db_filename)
@@ -125,6 +126,48 @@ class sqlite_reader:
             rows = cur.fetchall()
             return rows
 
+    def get_all_rows(self):
+        with self.conn:
+            cur = self.conn.cursor()
+            sql = ("SELECT * FROM snapshot_log;")
+            cur.execute(sql)
+            return cur.fetchall()
+
+    def get_reduced_log(self, name, compfunc, t):
+        condition_start = []
+        condition_end = []
+        started = False
+        idx = self.fields.index(name)
+        for row in self.get_all_rows():
+            if compfunc(t, row[idx]) and not started:
+                condition_start.append(row[1])
+            if not compfunc(t, row[idx]) and started:
+                condition_end.append(row[2])
+        return condition_start, condition_end
+
+    def reduce_log(self):
+        with self.conn:
+            cur = self.conn.cursor()
+            for field in self.fields:
+                starts, ends = self.get_reduced_log(field, lessthan,
+                                                    650)
+                sql = ("CREATE TABLE IF NOT EXISTS " + field +
+                       "(id INTEGER PRIMARY KEY ASC, timestamp, condition)")
+                
+                cur.execute(sql)
+                idx = 0
+                for t in starts:
+                    sql = ("INSERT INTO " + field + " (timestamp, "
+                           "condition) VALUES (?, ?)")
+                    print(sql)
+                    cur.execute(sql, (starts[idx], 1))
+                    idx += 1
+                    if idx < len(ends):
+                        sql = ("INSERT INTO " + field + " (timestamp, "
+                               "condition) VALUES (?, ?)")
+                        print(sql)
+                        cur.execute(sql, (ends[idx], 0))
+
     def get_last_record_dict(self):
         with self.conn:
             cur = self.conn.cursor()
@@ -134,6 +177,14 @@ class sqlite_reader:
             rows = cur.fetchall()
             return dict_factory(cur, rows[0])
 
+def greaterthan(a, b):
+    return b > a
+
+def lessthan(a, b):
+    return a < b
+
+def eq(a, b):
+    return a == b
 
 def dig_fields(json_data):
     data = json.loads(json_data)
