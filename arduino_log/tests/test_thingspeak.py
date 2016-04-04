@@ -10,7 +10,7 @@ fields = ['a', 'b', 'c']
 
 class TestCreate(TestCase):
     def setUp(self):
-        self.t = thingspeak.ThingspeakInterface('/home/juntunenkc/git/arduino_log/etc/arduino_log.json')
+        self.t = thingspeak.ThingspeakInterface('./etc/arduino_log.json')
         self.s = sqi.sqlite_writer("/tmp/test.db", fields)
         #self.s.insert_data(SAMPLE_JSON)
         self.q = sqi.sqlite_reader("/tmp/test.db", fields)

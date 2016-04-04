@@ -10,14 +10,9 @@ fields = ['a', 'b', 'c']
 class TestCreate(TestCase):
     def setUp(self):
         logging.basicConfig(filename='/tmp/test.log',
-                            filemode='w',
+                            filemode='a',
                             format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                            datefmt='%H:%M:%S',
                             level=logging.DEBUG)
-        self.logger = logging.getLogger('test_sql')
-        #fh = logging.FileHandler('/tmp/test.log')
-        #fh.setLevel(logging.DEBUG)
-        #self.logger.addHandler(fh)
         self.s = sqi.sqlite_writer("/tmp/test.db", fields)
         self.s.insert_data(SAMPLE_JSON)
         random.seed()
@@ -56,7 +51,7 @@ class TestCreate(TestCase):
     def test_get_reduced_log(self):
         starts, ends = self.q.get_reduced_log('a', sqi.lessthan, 998.11)
         for x in starts:
-            self.logger.debug(x + "1")
+            logging.debug(x + "1")
         for x in ends:
             self.logger.debug(x + "0")
 

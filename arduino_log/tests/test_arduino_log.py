@@ -1,15 +1,14 @@
 from unittest import TestCase
 import mock
 import random
-#from arduino_log import sqlite_interface as sqi
-#from arduino_log import thingspeak
 from arduino_log import arduino_log
 
 SAMPLE_JSON = '{"a": 5847, "b": -42, "c": 482}'
 
 class TestCreate(TestCase):
-    def setUp(self):
-        self.a = arduino_log.arduino_log('/home/juntunenkc/git/arduino_log/etc/arduino_log.json')
+    @mock.patch('serial.Serial')
+    def setUp(self, mock_ser):
+        self.a = arduino_log.arduino_log('./etc/arduino_log.json')
 
     def test_decode_string(self):
         x = random.randrange(1, 5000000 )/ 1000.0
@@ -22,8 +21,7 @@ class TestCreate(TestCase):
         self.a.recipients = ['fake_email@gmail.com', 'another_fake@gmail.com']
         self.a.send_email("stuff", "things")
 
-    @mock.patch('serial.Serial')
-    def test_log_data(self, mock_serial):
+    def test_log_data(self):
         self.a.log_data()
 
     def test_check_alerts_returns(self):
