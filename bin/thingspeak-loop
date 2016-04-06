@@ -3,4 +3,4 @@ import json
 from arduino_log import thingspeak as th
 
 if __name__ == "__main__":
-    thsp.start()
+    th.start()
