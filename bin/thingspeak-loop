@@ -2,9 +2,5 @@
 import json
 from arduino_log import thingspeak as th
 
-def start_loop():
-    thsp = th.ThingspeakInterface('/etc/arduino_log.json')
-    thsp.start_loop()
-
 if __name__ == "__main__":
-    start_loop()
+    thsp.start()
