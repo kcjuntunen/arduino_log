@@ -71,7 +71,14 @@ class arduino_log():
         line = self.ser.readline()
         data = self.decode_string(line, 0)
         self.check_alerts(data)
-        if len(data) > 0:
+        if data is not None and len(data) > 0:
+            self.sqlw.insert_dict(data)
+
+    def log_data2(self):
+        line = self.ser.readline()
+        data = self.decode_string2(line, 0)
+        self.check_alerts(data)
+        if data is not None and len(data) > 0:
             self.sqlw.insert_dict(data)
 
     def check_alerts(self, datadict):
@@ -111,6 +118,11 @@ class arduino_log():
                 print "Exception: {0}\n".format(e)
 
     def decode_string(self, line, skip):
+        json_ob = json.loads(line)
+        if json_ob.has_key("Poll"):
+            return json_ob["Poll"]
+
+    def decode_string2(self, line, skip):
         data = {}
         line_array = line.split(":")
         if not len(line_array) == len(self.labels) + abs(skip):
@@ -134,7 +146,7 @@ class arduino_log():
                 exit(1)
                 #self.sqlw.insert_alert("Exc3ption: {0}".format(e.message), 0, 0, 0)
 
-def start():    
+def start():
     import ip as ip
     ip.broadcast_ip()
     moni = arduino_log('/etc/arduino_log.json')
@@ -143,4 +155,3 @@ def start():
 
 if __name__ == "__main__":
     start()
-

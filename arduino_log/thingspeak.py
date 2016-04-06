@@ -41,17 +41,17 @@ class ThingspeakInterface():
             return True, message
         except httplib.HTTPException as http_exception:
             return False, http_exception.message
-        
+
     def create_url(self, data_dict):
         data = {}
         count = 1
-        for field in data_dict:
+        for field in self.labels:
             data["field" + str(count)] = data_dict[field]
             count += 1
 
         data["key"] = self.key
         return urllib.urlencode(data)
-        
+
     def send_data(self):
         """Send data to thingspeak."""
         if self.key == "":
@@ -67,15 +67,12 @@ class ThingspeakInterface():
             data = response.read()
             conn.close()
             #return True, "OK"
-            self.s.enter(30, 1, self.send_data, ())
+            self.s.enter(self.timespec, 1, self.send_data, ())
         except httplib.HTTPException as http_exception:
             self.sqlw.insert_alert("Connection failed: {0}".format(http_exception.message), 0,0,0)
             #return False, "Connection failed: {0}".format(http_exception.message)
             self.s.enter(240, 1, self.send_data, ())
 
     def start_loop(self):
-        timespec = self.timespec 
-        if  timespec < 15:
-            timespec = 15
-        self.s.enter(timespec, 1, self.send_data, ())
+        self.s.enter(5, 1, self.send_data, ())
         self.s.run()
