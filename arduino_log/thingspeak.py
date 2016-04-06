@@ -78,5 +78,5 @@ class ThingspeakInterface():
         self.s.run()
 
 def start(config_file):
-    with ThingspeakInterface(config_file) as thsp:
-        thsp.start_loop()
+    thsp = ThingspeakInterface(config_file)
+    thsp.start_loop()
