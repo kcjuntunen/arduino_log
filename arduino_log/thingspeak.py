@@ -76,3 +76,7 @@ class ThingspeakInterface():
     def start_loop(self):
         self.s.enter(5, 1, self.send_data, ())
         self.s.run()
+
+def start(config_file):
+    with ThingspeakInterface(config_file) as thsp:
+        thsp.start_loop()
