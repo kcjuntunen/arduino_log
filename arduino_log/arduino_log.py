@@ -154,7 +154,6 @@ class arduino_log():
             except Exception as e:
                 print("Exception: {0}\n".format(e.message))
                 exit(1)
-                #self.sqlw.insert_alert("Exc3ption: {0}".format(e.message), 0, 0, 0)
 
 def start():
     import ip as ip
