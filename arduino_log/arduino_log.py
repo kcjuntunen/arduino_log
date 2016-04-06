@@ -17,7 +17,6 @@ class arduino_log():
         self.smtp_server = self.config_data["smtp_server"]
         self.sender = self.config_data["sender"]
         self.recipients = self.config_data["recipients"]
-        #self.threshold = self.config_data["light_threshold"]
         self.day_start = self.config_data["day_start"]
         self.day_end = self.config_data["day_end"]
         self.alerts = self.config_data["alerts"]
@@ -29,9 +28,8 @@ class arduino_log():
         self.thingspeak = thsp.ThingspeakInterface(config_file)
         self.sent = {}
         for i in self.config_data["alerts"]:
-            self.sent[u.unicode_to_string(i)] = False
-        #self.sent_on = True
-        #self.sent_off = False
+            self.sent[i[0]] = False
+
         self.labels = self.config_data["labels"]
 
     def ok_to_send(self):
@@ -82,12 +80,14 @@ class arduino_log():
             self.sqlw.insert_dict(data)
 
     def check_alerts(self, datadict):
-        for a in self.alerts:
+        for alert in self.alerts:
+            k = alert[0]
+            v = alert[1]
+            m = alert[2]
             try:
-                b = u.unicode_to_string(a)
-                if abs(datadict [b]) > abs(self.config_data[b]):
-                    if self.ok_to_send() and not self.sent[b]:
-                        message = b + " exceeded in " + self.unit
+                if abs(datadict[k]) > abs(v):
+                    if self.ok_to_send() and not self.sent[k]:
+                        message = m + " in " + str(self.unit).lower()
                         esent = 0
                         if self.send_email(self.unit, message):
                             esent = 1
@@ -95,7 +95,14 @@ class arduino_log():
                         if self.thingspeak.tweet(message):
                             tsent = 1
                         self.sqlw.insert_alert(message, esent, tsent, 0)
-                        self.sent[b] = True
+                        self.sent[k] = True
+            except Exception as e:
+                print "Exception: {0}\n".format(e)
+
+            try:
+                if abs(datadict[k]) < abs(v):
+                    if not self.sent[k]:
+                        self.sent[k] = False
             except Exception as e:
                 print "Exception: {0}\n".format(e)
 

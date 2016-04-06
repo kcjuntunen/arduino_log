@@ -14,7 +14,5 @@
     "day_end": "20:30",
     "thingspeak_freq": 30,
     "labels": ["a", "b", "c"],
-    "alerts": ["a", "c"],
-    "a": [998.11, "less than"],
-    "b": [70, "less than"]
+    "alerts": [["a", 998.11, "Too much pressure"], ["c", 70, "Too hot"]]
 }
