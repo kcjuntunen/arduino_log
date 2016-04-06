@@ -70,8 +70,8 @@ class arduino_log():
     def log_data(self):
         line = self.ser.readline()
         data = self.decode_string(line, 0)
-        self.check_alerts(data)
         if data is not None and len(data) > 0:
+            self.check_alerts(data)
             self.sqlw.insert_dict(data)
 
     def log_data2(self):
@@ -118,9 +118,12 @@ class arduino_log():
                 print "Exception: {0}\n".format(e)
 
     def decode_string(self, line, skip):
-        json_ob = json.loads(line)
-        if json_ob.has_key("Poll"):
-            return json_ob["Poll"]
+        try:
+            json_ob = json.loads(line)
+            if json_ob.has_key("Poll"):
+                return json_ob["Poll"]
+        except ValueError as ve:
+            return None
 
     def decode_string2(self, line, skip):
         data = {}
