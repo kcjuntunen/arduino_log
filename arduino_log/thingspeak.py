@@ -63,15 +63,19 @@ class ThingspeakInterface():
         try:
             conn.request("POST", "/update", params, headers)
             response = conn.getresponse()
-            #print response.status, response.reason
+            print ("{0}, {1}".format(response.status, response.reason))
             data = response.read()
             conn.close()
-            #return True, "OK"
             self.s.enter(self.timespec, 1, self.send_data, ())
         except httplib.HTTPException as http_exception:
             self.sqlw.insert_alert("Connection failed: {0}".format(http_exception.message), 0,0,0)
-            #return False, "Connection failed: {0}".format(http_exception.message)
-            self.s.enter(240, 1, self.send_data, ())
+            print("Connection failed: {0}".format(http_exception.message))
+            # try again in 5
+            self.s.enter(300, 1, self.send_data, ())
+        except Exception as e:
+            print("I'm the guy killing your script: {0}".format(e.message))
+            # try again in 5
+            self.s.enter(300, 1, self.send_data, ())
 
     def start_loop(self):
         self.s.enter(5, 1, self.send_data, ())
