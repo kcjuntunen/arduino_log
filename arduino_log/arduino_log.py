@@ -28,7 +28,7 @@ class arduino_log():
         self.thingspeak = thsp.ThingspeakInterface(config_file)
         self.sent = {}
         for i in self.config_data["alerts"]:
-            self.sent[i[0]] = [False, False]
+            self.sent[i[0]] = [False, False, True]
 
         self.labels = self.config_data["labels"]
 
@@ -90,19 +90,24 @@ class arduino_log():
                         m = alert[2]
                         self.send_alert(m)
                         self.sent[k][0] = True
+                        self.sent[k][2] = False
                 if len(alert) == 5:
                     v = alert[3]
                     m = alert[4]
                     if abs(currentval) < abs(v):
                         if not self.sent[k][1]:
                             self.send_alert(m)
-                            self.sent[k][1] = False
+                            self.sent[k][1] = True
+                            self.sent[k][2] = False
                 if len(alert) > 5:
-                    if (not self.sent[k][0] and not self.sent[k][1] and not
+                    if (not self.sent[k][2] and not
                         abs(currentval) > abs(alert[1]) and not
                         abs(currentval) < abs(alert[3])):
                         m = alert[5]
                         self.send_alert(m)
+                        self.sent[k][0] = False
+                        self.sent[k][1] = False
+                        self.sent[k][2] = True
             except Exception as e:
                 print "Exception: {0}\n".format(e)
 
