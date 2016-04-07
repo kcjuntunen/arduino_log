@@ -92,6 +92,7 @@ class arduino_log():
                         self.sent[k][0] = True
                 if len(alert) == 5:
                     v = alert[3]
+                    m = alert[4]
                     if abs(currentval) < abs(v):
                         if not self.sent[k][1]:
                             self.send_alert(m)
@@ -101,19 +102,19 @@ class arduino_log():
                         abs(currentval) > abs(alert[1]) and not
                         abs(currentval) < abs(alert[3])):
                         m = alert[5]
-                        seld.send_alert(m)
+                        self.send_alert(m)
             except Exception as e:
                 print "Exception: {0}\n".format(e)
 
-    def send_alert(self, message):
-        message = m + " in " + str(self.unit).lower()
+    def send_alert(self, msg):
+        message = msg + " in " + str(self.unit).lower()
         # Tweet
         tsent = 0
+        esent = 0
         if self.thingspeak.tweet(message):
             tsent = 1
             # Email between certain hours
         if self.ok_to_send():
-            esent = 0
             if self.send_email(self.unit, message):
                 esent = 1
         self.sqlw.insert_alert(message, esent, tsent, 0)
