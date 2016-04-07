@@ -108,7 +108,9 @@ class arduino_log():
                 print "Exception: {0}\n".format(e)
 
     def send_alert(self, msg):
-        message = msg + " in " + str(self.unit).lower()
+        today = datetime.datetime.now()
+        message = (msg + " in " + str(self.unit).lower() +
+                   " @ " + today.strftime('%b %d %Y %H:%M')) 
         # Tweet
         tsent = 0
         esent = 0
