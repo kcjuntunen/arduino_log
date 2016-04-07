@@ -82,25 +82,28 @@ class arduino_log():
     def check_alerts(self, datadict):
         for alert in self.alerts:
             k = alert[0]
-            v = alert[1]
             currentval = datadict[k]
             try:
-                if abs(currentval) > abs(v):
-                    if not self.sent[k][0]:
+                if len(alert > 2):
+                    v = alert[1]
+                    if (currentval > v and
+                        not self.sent[k][0]):
                         m = alert[2]
                         self.send_alert(m)
                         self.sent[k] = [True, False, False]
                 if len(alert) > 4:
                     v = alert[3]
                     m = alert[4]
-                    if abs(currentval) < abs(v):
-                        if not self.sent[k][1]:
-                            self.send_alert(m)
-                            self.sent[k] = [False, True, False]
+                    if (currentval < v and
+                        not self.sent[k][1]):
+                        self.send_alert(m)
+                        self.sent[k] = [False, True, False]
                 if len(alert) > 5:
+                    v1 = alert[1]
+                    v2 = alert[3]
                     if (not self.sent[k][2] and not
-                        abs(currentval) > abs(alert[1]) and not
-                        abs(currentval) < abs(alert[3])):
+                        currentval > v1 and not
+                        currentval < v2):
                         m = alert[5]
                         self.send_alert(m)
                         self.sent[k] = [False, False, True]
