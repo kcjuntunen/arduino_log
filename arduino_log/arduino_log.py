@@ -91,7 +91,7 @@ class arduino_log():
                         self.send_alert(m)
                         self.sent[k][0] = True
                         self.sent[k][2] = False
-                if len(alert) == 5:
+                if len(alert) > 4:
                     v = alert[3]
                     m = alert[4]
                     if abs(currentval) < abs(v):
