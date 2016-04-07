@@ -86,14 +86,17 @@ class arduino_log():
             m = alert[2]
             try:
                 if abs(datadict[k]) > abs(v):
-                    if self.ok_to_send() and not self.sent[k]:
+                    if not self.sent[k]:
                         message = m + " in " + str(self.unit).lower()
-                        esent = 0
-                        if self.send_email(self.unit, message):
-                            esent = 1
+                        # Tweet
                         tsent = 0
                         if self.thingspeak.tweet(message):
                             tsent = 1
+                        # Email between certain hours
+                        if self.ok_to_send():
+                            esent = 0
+                            if self.send_email(self.unit, message):
+                                esent = 1
                         self.sqlw.insert_alert(message, esent, tsent, 0)
                         self.sent[k] = True
             except Exception as e:
