@@ -89,25 +89,21 @@ class arduino_log():
                     if not self.sent[k][0]:
                         m = alert[2]
                         self.send_alert(m)
-                        self.sent[k][0] = True
-                        self.sent[k][2] = False
+                        self.sent[k] = [True, False, False]
                 if len(alert) > 4:
                     v = alert[3]
                     m = alert[4]
                     if abs(currentval) < abs(v):
                         if not self.sent[k][1]:
                             self.send_alert(m)
-                            self.sent[k][1] = True
-                            self.sent[k][2] = False
+                            self.sent[k] = [False, True, False]
                 if len(alert) > 5:
                     if (not self.sent[k][2] and not
                         abs(currentval) > abs(alert[1]) and not
                         abs(currentval) < abs(alert[3])):
                         m = alert[5]
                         self.send_alert(m)
-                        self.sent[k][0] = False
-                        self.sent[k][1] = False
-                        self.sent[k][2] = True
+                        self.sent[k] = [False, False, True]
             except Exception as e:
                 print "Exception: {0}\n".format(e)
 
