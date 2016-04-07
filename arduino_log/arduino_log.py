@@ -84,7 +84,7 @@ class arduino_log():
             k = alert[0]
             currentval = datadict[k]
             try:
-                if len(alert > 2):
+                if len(alert) > 2:
                     v = alert[1]
                     if (currentval > v and
                         not self.sent[k][0]):
