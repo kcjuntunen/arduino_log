@@ -28,7 +28,7 @@ class arduino_log():
         self.thingspeak = thsp.ThingspeakInterface(config_file)
         self.sent = {}
         for i in self.config_data["alerts"]:
-            self.sent[i[0]] = False
+            self.sent[i[0]] = [False, False]
 
         self.labels = self.config_data["labels"]
 
@@ -83,31 +83,40 @@ class arduino_log():
         for alert in self.alerts:
             k = alert[0]
             v = alert[1]
-            m = alert[2]
+            currentval = datadict[k]
             try:
-                if abs(datadict[k]) > abs(v):
-                    if not self.sent[k]:
-                        message = m + " in " + str(self.unit).lower()
-                        # Tweet
-                        tsent = 0
-                        if self.thingspeak.tweet(message):
-                            tsent = 1
-                        # Email between certain hours
-                        if self.ok_to_send():
-                            esent = 0
-                            if self.send_email(self.unit, message):
-                                esent = 1
-                        self.sqlw.insert_alert(message, esent, tsent, 0)
-                        self.sent[k] = True
+                if abs(currentval) > abs(v):
+                    if not self.sent[k][0]:
+                        m = alert[2]
+                        self.send_alert(m)
+                        self.sent[k][0] = True
+                if len(alert) == 5:
+                    v = alert[3]
+                    if abs(currentval) < abs(v):
+                        if not self.sent[k][1]:
+                            self.send_alert(m)
+                            self.sent[k][1] = False
+                if len(alert) > 5:
+                    if (not self.sent[k][0] and not self.sent[k][1] and not
+                        abs(currentval) > abs(alert[1]) and not
+                        abs(currentval) < abs(alert[3])):
+                        m = alert[5]
+                        seld.send_alert(m)
             except Exception as e:
                 print "Exception: {0}\n".format(e)
 
-            try:
-                if abs(datadict[k]) < abs(v):
-                    if not self.sent[k]:
-                        self.sent[k] = False
-            except Exception as e:
-                print "Exception: {0}\n".format(e)
+    def send_alert(self, message):
+        message = m + " in " + str(self.unit).lower()
+        # Tweet
+        tsent = 0
+        if self.thingspeak.tweet(message):
+            tsent = 1
+            # Email between certain hours
+        if self.ok_to_send():
+            esent = 0
+            if self.send_email(self.unit, message):
+                esent = 1
+        self.sqlw.insert_alert(message, esent, tsent, 0)
 
     def check_return(self, datadict):
         for a in self.alerts:

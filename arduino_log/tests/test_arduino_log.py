@@ -25,7 +25,14 @@ class TestCreate(TestCase):
         self.a.send_email("stuff", "things")
 
     def test_log_data2(self):
-        self.a.log_data2()
+        with mock.patch('serial.Serial.readline') as MockClass:
+            MockClass.return_value = '0:3456:2345:-642'
+            self.a.log_data2()
+
+    def test_log_data(self):
+        with mock.patch('serial.Serial.readline') as MockClass:
+            MockClass.return_value = '{"a": 593, "b": 8582, "c": -192}'
+            self.a.log_data()
 
     def test_check_alerts_returns(self):
         self.a.check_alerts({'a': 40, 'c': 55})

@@ -25,13 +25,13 @@ class TestCreate(TestCase):
             x = gimmie_a_number()
             self.s.insert_data('{"a": ' + str(v) + ', "b": ' + str(x)  + ', "c": ' + str(w) + '}')
             #time.sleep(1)
-            
+
         self.q = sqi.sqlite_reader("/tmp/test.db", fields)
 
     def test_get_db_version(self):
         self.s.get_db_version()
-        
-    def test_insert_data(self):            
+
+    def test_insert_data(self):
         x = random.randrange(1, 500000) / 1000.0
         self.s.insert_data('{"a": 657, "b": ' + str(x)  + ', "c": 754}')
 
@@ -48,15 +48,16 @@ class TestCreate(TestCase):
         all_rows = self.q.get_all_rows()
         self.assertGreater(len(all_rows), 500)
 
-    def test_get_reduced_log(self):
-        starts, ends = self.q.get_reduced_log('a', sqi.lessthan, 998.11)
-        for x in starts:
-            logging.debug(x + "1")
-        for x in ends:
-            self.logger.debug(x + "0")
+    # Not using these (yet?)
+    # def test_get_reduced_log(self):
+    #     starts, ends = self.q.get_reduced_log('a', sqi.lessthan, 998.11)
+    #     for x in starts:
+    #         logging.debug(x + "1")
+    #     for x in ends:
+    #         self.logger.debug(x + "0")
 
-    def test_reduce_log(self):
-        self.q.reduce_log()
+    # def test_reduce_log(self):
+    #     self.q.reduce_log()
 
     def tearDown(self):
         None
