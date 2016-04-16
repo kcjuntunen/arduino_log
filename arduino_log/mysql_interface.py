@@ -1,4 +1,4 @@
-import mysql.connector as sql
+import mysql.connector as sqlc
 import json
 import sys, datetime
 import utility as u
@@ -13,27 +13,28 @@ class sql_writer:
         self.database = database
         self.labels = fields
 
-        try:
-            self.conn = sql.connect(user=self.login,
-                                    password=self.passwd,
-                                    host=self.host,
-                                    database=self.database)
-        except sql.Error as e:
-            print ("Error #{0}: {1}".format(e.errno, e.msg))
-            sys.exit(1)
-
         if not len(self.show_tables()) > 1:
             self.create_table(fields)
             self.create_message_table()
 
+    @property
+    def conn(self):
+        cnx = sqlc.connect(user=self.login,
+                           password=self.passwd,
+                           host=self.host,
+                           database=self.database)
+        return cnx
+
     def get_db_version(self):
-        cur = self.conn.cursor()
+        c = self.conn
+        cur = c.cursor()
         cur.execute('SELECT VERSION();')
         data = cur.fetchone()
         return "MySQL/Maria DB version information:\n%s" % data
 
     def show_tables(self):
-        cur = self.conn.cursor()
+        c = self.conn
+        cur = c.cursor()
         sql = ("SHOW TABLES;")
         cur.execute(sql)
         return cur.fetchall()
@@ -52,12 +53,15 @@ class sql_writer:
                       "timestamp TIMESTAMP, " +
                       f + " DECIMAL(10,2) "
                       ")")
-
-        cur = self.conn.cursor()
+        c = self.conn
+        cur = c.cursor()
         cur.execute(create_sql)
+        cur.close()
+        self.conn.close()
 
     def create_message_table(self):
-        cur = self.conn.cursor()
+        c = self.conn
+        cur = c.cursor()
         sql = ("CREATE TABLE IF NOT EXISTS message_log "
                "(id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, "
                "timestamp TIMESTAMP, "
@@ -78,8 +82,8 @@ class sql_writer:
         sql = ("INSERT INTO snapshot_log (timestamp, " +
                fields  + ") VALUES (NOW(), " + values  +
                ")")
-
-        cur = self.conn.cursor()
+        c = self.conn
+        cur = c.cursor()
         try:
             cur.execute(sql)
             self.conn.commit()
@@ -91,8 +95,8 @@ class sql_writer:
         values = ', '.join([str(dict_data[f]) for f in dict_data])
         sql = ("INSERT INTO snapshot_log (timestamp, " + fields +
                ") VALUES (NOW(), " + values + " )")
-
-        cur = self.conn.cursor()
+        c = self.conn
+        cur = c.cursor()
         try:
             cur.execute(sql)
             self.conn.commit()
@@ -121,30 +125,34 @@ class sql_reader:
         self.database = database
         self.labels = fields
 
-        try:
-            self.conn = sql.connect(user=self.login,
-                                    password=self.passwd,
-                                    host=self.host,
-                                    database=self.database)
-        except sql.Error as e:
-            print "Error %s:" % e.args[0]
-            sys.exit(1)
-
         self.fields = fields
 
+    @property
+    def conn(self):
+        cnx = sqlc.connect(user=self.login,
+                           password=self.passwd,
+                           host=self.host,
+                           database=self.database)
+        return cnx
+
     def get_last_record(self):
-        cur = self.conn.cursor()
+        c = self.conn
+        cur = c.cursor()
         sql = ("SELECT " + ', '.join(self.fields) +
-               " FROM snapshot_log ORDER BY id DESC LIMIT 1;")
+               " FROM snapshot_log WHERE id = (SELECT MAX(id) FROM "
+               "snapshot_log);")
         cur.execute(sql)
         rows = cur.fetchall()
+        c.close()
         return rows
 
     def get_all_rows(self):
         cur = self.conn.cursor()
         sql = ("SELECT * FROM snapshot_log;")
         cur.execute(sql)
-        return cur.fetchall()
+        r = cur.fetchall()
+        self.conn.close()
+        return r
 
     # def get_reduced_log(self, name, compfunc, t):
     #     condition_start = []
@@ -183,9 +191,11 @@ class sql_reader:
     #                     cur.execute(sql, (ends[idx], 0))
 
     def get_last_record_dict(self):
-        cur = self.conn.cursor()
+        c = self.conn
+        cur = c.cursor()
         sql = ("SELECT " + ', '.join(self.fields) +
-               " FROM snapshot_log ORDER BY id DESC LIMIT 1;")
+               " FROM snapshot_log WHERE id = (SELECT MAX(id) FROM "
+               "snapshot_log);")
         cur.execute(sql)
         rows = cur.fetchall()
         return dict_factory(cur, rows[0])
