@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='arduino_log',
-      version='0.5',
+      version='0.6',
       description='Log Arduino output',
       long_description='Take JSON formatted Arduino output, and selectively distribute it.',
       classifiers=[
