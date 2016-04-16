@@ -2,7 +2,7 @@ from unittest import TestCase
 import random
 import time
 import logging
-from arduino_log import sqlite_interface as sqi
+from arduino_log import mysql_interface as sqi
 
 SAMPLE_JSON = '{"a": 5847, "b": -42, "c": 482}'
 fields = ['a', 'b', 'c']
@@ -13,7 +13,11 @@ class TestCreate(TestCase):
                             filemode='a',
                             format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                             level=logging.DEBUG)
-        self.s = sqi.sqlite_writer("/tmp/test.db", fields)
+        self.s = sqi.sql_writer("localhost",
+                                "root",
+                                "",
+                                "test2",
+                                fields)
         self.s.insert_data(SAMPLE_JSON)
         random.seed()
         x = gimmie_a_number()
@@ -26,7 +30,11 @@ class TestCreate(TestCase):
             self.s.insert_data('{"a": ' + str(v) + ', "b": ' + str(x)  + ', "c": ' + str(w) + '}')
             #time.sleep(1)
 
-        self.q = sqi.sqlite_reader("/tmp/test.db", fields)
+        self.q = sqi.sql_reader("localhost",
+                                "root",
+                                "",
+                                "test2",
+                                fields)
 
     def test_get_db_version(self):
         self.s.get_db_version()

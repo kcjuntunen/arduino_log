@@ -1,6 +1,6 @@
 """I'll try and create a bunch of Thingspeak-specific functions."""
 import json, urllib, httplib, sched, time
-import sqlite_interface as sqli
+import mysql_interface as sqli
 
 class ThingspeakInterface():
     """A class for handling Thingspeak operations."""
@@ -12,8 +12,16 @@ class ThingspeakInterface():
             self.target_db = config_data["localDB"]
             self.labels = config_data["labels"]
             self.timespec = config_data["thingspeak_freq"]
-        self.sqlr = sqli.sqlite_reader(self.target_db, self.labels)
-        self.sqlw = sqli.sqlite_writer(self.target_db, self.labels)
+            self.sqlr = sqli.sql_reader(config_data["host"],
+                                        config_data["login"],
+                                        config_data["passwd"],
+                                        config_data["database"],
+                                        config_data["labels"])
+            self.sqlw = sqli.sql_writer(config_data["host"],
+                                        config_data["login"],
+                                        config_data["passwd"],
+                                        config_data["database"],
+                                        config_data["labels"])
         self.s = sched.scheduler(time.time, time.sleep)
 
     def tweet(self, message):

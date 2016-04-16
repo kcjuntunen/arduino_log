@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import httplib, urllib, os, datetime, serial, smtplib, json
-import sqlite_interface as sqli
+import mysql_interface as sqli
 import thingspeak as thsp
 import utility as u
 
@@ -23,8 +23,11 @@ class arduino_log():
         self.thspfreq = self.config_data["thingspeak_freq"]
         self.ser = serial.Serial(self.config_data["serial_port"],
                                  self.config_data["baud"])
-        self.sqlw = sqli.sqlite_writer(self.local_db,
-                                       self.config_data["labels"])
+        self.sqlw = sqli.sql_writer(self.config_data["host"],
+                                    self.config_data["login"],
+                                    self.config_data["passwd"],
+                                    self.config_data["database"],
+                                    self.config_data["labels"])
         self.thingspeak = thsp.ThingspeakInterface(config_file)
         self.sent = {}
         for i in self.config_data["alerts"]:
