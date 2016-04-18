@@ -57,7 +57,7 @@ class sql_writer:
         cur = c.cursor()
         cur.execute(create_sql)
         cur.close()
-        self.conn.close()
+        c.close()
 
     def create_message_table(self):
         c = self.conn
@@ -71,8 +71,10 @@ class sql_writer:
                "status INT(1))")
         try:
             cur.execute(sql)
-        except:
-            print ("Couldn't insert\nsql={0}".format(sql))
+        except sql.Error as e:
+            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
+        except Exception as e:
+            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
 
     def insert_data(self, json_string):
         json_ob = json.loads(json_string)
@@ -86,7 +88,7 @@ class sql_writer:
         cur = c.cursor()
         try:
             cur.execute(sql)
-            self.conn.commit()
+            c.commit()
         except:
             print ("Couldn't insert\nsql={0}".format(sql))
 
@@ -99,19 +101,22 @@ class sql_writer:
         cur = c.cursor()
         try:
             cur.execute(sql)
-            self.conn.commit()
-        except:
-            print ("Couldn't insert\nsql={0}".format(sql))
+            c.commit()
+        except sql.Error as e:
+            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
+        except Exception as e:
+            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
 
     def insert_alert(self, msg, email, tweet, stat):
         sql = ("INSERT INTO message_log (timestamp, message, "
                "email, tweet, status) VALUES "
                "(NOW(), \"{0}\", {1}, {2}, {3});".
                format(msg, email, tweet, stat))
-        cur = self.conn.cursor()
+        c = self.conn
+        cur = c.cursor()
         try:
             cur.execute(sql)
-            self.conn.commit()
+            c.commit()
         except:
             print ("Couldn't insert\nsql={0}".format(sql))
 
@@ -147,11 +152,12 @@ class sql_reader:
         return rows
 
     def get_all_rows(self):
-        cur = self.conn.cursor()
+        c = self.conn
+        cur = c.cursor()
         sql = ("SELECT * FROM snapshot_log;")
         cur.execute(sql)
         r = cur.fetchall()
-        self.conn.close()
+        c.close()
         return r
 
     # def get_reduced_log(self, name, compfunc, t):
