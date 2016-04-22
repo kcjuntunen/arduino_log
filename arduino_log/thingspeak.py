@@ -66,7 +66,7 @@ class ThingspeakInterface():
         try:
             conn.request("POST", "/update", params, headers)
             response = conn.getresponse()
-            print ("{0}, {1}".format(response.status, response.reason))
+            #print ("{0}, {1}".format(response.status, response.reason))
             data = response.read()
             conn.close()
             self.s.enter(self.timespec, 1, self.send_data, ())
