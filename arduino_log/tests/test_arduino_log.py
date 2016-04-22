@@ -24,10 +24,10 @@ class TestCreate(TestCase):
         self.a.recipients = ['fake_email@gmail.com', 'another_fake@gmail.com']
         self.a.send_email("stuff", "things")
 
-    def test_log_data2(self):
-        with mock.patch('serial.Serial.readline') as MockClass:
-            MockClass.return_value = '0:3456:2345:-642'
-            self.a.log_data2()
+    # def test_log_data2(self):
+    #     with mock.patch('serial.Serial.readline') as MockClass:
+    #         MockClass.return_value = '0:3456:2345:-642'
+    #         self.a.log_data2()
 
     def test_log_data(self):
         with mock.patch('serial.Serial.readline') as MockClass:

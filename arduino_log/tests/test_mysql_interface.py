@@ -13,7 +13,7 @@ class TestCreate(TestCase):
                             filemode='a',
                             format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                             level=logging.DEBUG)
-        self.s = sqi.sql_writer("localhost",
+        self.s = sqi.Database("localhost",
                                 "root",
                                 "",
                                 "test2",
@@ -30,12 +30,6 @@ class TestCreate(TestCase):
             self.s.insert_data('{"a": ' + str(v) + ', "b": ' + str(x)  + ', "c": ' + str(w) + '}')
             #time.sleep(1)
 
-        self.q = sqi.sql_reader("localhost",
-                                "root",
-                                "",
-                                "test2",
-                                fields)
-
     def test_get_db_version(self):
         self.s.get_db_version()
 
@@ -43,17 +37,17 @@ class TestCreate(TestCase):
         x = random.randrange(1, 500000) / 1000.0
         self.s.insert_data('{"a": 657, "b": ' + str(x)  + ', "c": 754}')
 
-        y = self.q.get_last_record()[0]
-        self.assertEqual(y[1], x)
+        y = self.s.get_last_record()[0]
+        self.assertEqual(y[1], Decimal(x))
 
     def test_read_data(self):
         self.s.insert_data('{"a": 5847, "b": -42, "c": 482}')
-        lr = self.q.get_last_record()[0]
+        lr = self.s.get_last_record()[0]
         self.assertEqual(lr[0], 5847)
         self.assertEqual(lr[2], 482)
 
     def test_get_all_rows(self):
-        all_rows = self.q.get_all_rows()
+        all_rows = self.s.get_all_rows()
         self.assertGreater(len(all_rows), 500)
 
     # Not using these (yet?)

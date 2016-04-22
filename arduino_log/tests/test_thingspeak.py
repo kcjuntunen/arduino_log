@@ -11,12 +11,10 @@ fields = ['a', 'b', 'c']
 class TestCreate(TestCase):
     def setUp(self):
         self.t = thingspeak.ThingspeakInterface('./etc/arduino_log.json')
-        self.s = sqi.sqlite_writer("/tmp/test.db", fields)
         #self.s.insert_data(SAMPLE_JSON)
-        self.q = sqi.sqlite_reader("/tmp/test.db", fields)
         
     def test_create_url(self):
-        u = self.t.create_url(self.q.get_last_record_dict())
+        u = self.t.create_url(self.t.sqlr.get_last_record_dict())
         #self.assertEquals(u, "field2=482&field3=-42&field1=5847&key=")
 
     @mock.patch('httplib.HTTPConnection')
