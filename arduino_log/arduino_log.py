@@ -23,11 +23,11 @@ class arduino_log():
         self.thspfreq = self.config_data["thingspeak_freq"]
         self.ser = serial.Serial(self.config_data["serial_port"],
                                  self.config_data["baud"])
-        self.sqlw = sqli.sql_writer(self.config_data["host"],
-                                    self.config_data["login"],
-                                    self.config_data["passwd"],
-                                    self.config_data["database"],
-                                    self.config_data["labels"])
+        self.sqlw = sqli.Database(self.config_data["host"],
+                                  self.config_data["login"],
+                                  self.config_data["passwd"],
+                                  self.config_data["database"],
+                                  self.config_data["labels"])
         self.thingspeak = thsp.ThingspeakInterface(config_file)
         self.sent = {}
         for i in self.config_data["alerts"]:
@@ -111,7 +111,11 @@ class arduino_log():
                         self.send_alert(m)
                         self.sent[k] = [False, False, True]
             except Exception as e:
-                print "Exception: {0}\n".format(e)
+                print "Check alerts exception: {0}\n".format(e.message)
+                count = 1
+                for arg in e.args:
+                    print "{0} - {1}".format(count, arg)
+                    count = count + 1
 
     def send_alert(self, msg):
         today = datetime.datetime.now()

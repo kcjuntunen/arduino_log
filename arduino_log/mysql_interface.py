@@ -3,7 +3,7 @@ import json
 import sys, datetime
 import utility as u
 
-class sql_writer:
+class Database:
     def __init__(self, host, login, passwd, database, fields):
         """
         """
@@ -12,18 +12,22 @@ class sql_writer:
         self.passwd = passwd
         self.database = database
         self.labels = fields
-
+        self._db = None
         if not len(self.show_tables()) > 1:
             self.create_table(fields)
             self.create_message_table()
 
     @property
     def conn(self):
-        cnx = sqlc.connect(user=self.login,
-                           password=self.passwd,
-                           host=self.host,
-                           database=self.database)
-        return cnx
+        if self._db is None:
+            self._db = sqlc.connect(user=self.login,
+                                    password=self.passwd,
+                                    host=self.host,
+                                    database=self.database)
+        return self._db
+
+    def cursor(self):
+        return self.conn.cursor()
 
     def get_db_version(self):
         c = self.conn
@@ -53,15 +57,11 @@ class sql_writer:
                       "timestamp TIMESTAMP, " +
                       f + " DECIMAL(10,2) "
                       ")")
-        c = self.conn
-        cur = c.cursor()
+        cur = self.cursor()
         cur.execute(create_sql)
         cur.close()
-        c.close()
 
     def create_message_table(self):
-        c = self.conn
-        cur = c.cursor()
         sql = ("CREATE TABLE IF NOT EXISTS message_log "
                "(id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, "
                "timestamp TIMESTAMP, "
@@ -69,12 +69,15 @@ class sql_writer:
                "email INT(1), "
                "tweet INT(1), "
                "status INT(1))")
+        cur = self.cursor()
         try:
             cur.execute(sql)
-        except sql.Error as e:
+        except sqlc.Error as e:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
         except Exception as e:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
+        finally:
+            cur.close()
 
     def insert_data(self, json_string):
         json_ob = json.loads(json_string)
@@ -84,80 +87,71 @@ class sql_writer:
         sql = ("INSERT INTO snapshot_log (timestamp, " +
                fields  + ") VALUES (NOW(), " + values  +
                ")")
-        c = self.conn
-        cur = c.cursor()
+        cur = self.cursor()
         try:
             cur.execute(sql)
-            c.commit()
-        except:
-            print ("Couldn't insert\nsql={0}".format(sql))
+            self.conn.commit()
+        except sqlc.Error as e:
+            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".
+                   format(e.errno, e.msg, sql))
+        except Exception as e:
+            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".
+                   format(-1, e, sql))
+        finally:
+            cur.close()
 
     def insert_dict(self, dict_data):
         fields = ', '.join([f for f in dict_data])
         values = ', '.join([str(dict_data[f]) for f in dict_data])
         sql = ("INSERT INTO snapshot_log (timestamp, " + fields +
                ") VALUES (NOW(), " + values + " )")
-        c = self.conn
-        cur = c.cursor()
+
+        cur = self.cursor()
         try:
             cur.execute(sql)
-            c.commit()
-        except sql.Error as e:
+            self.conn.commit()
+        except sqlc.Error as e:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
         except Exception as e:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
+        finally:
+            cur.close()
 
     def insert_alert(self, msg, email, tweet, stat):
         sql = ("INSERT INTO message_log (timestamp, message, "
                "email, tweet, status) VALUES "
                "(NOW(), \"{0}\", {1}, {2}, {3});".
                format(msg, email, tweet, stat))
-        c = self.conn
-        cur = c.cursor()
+
+        cur = self.conn.cursor()
         try:
             cur.execute(sql)
-            c.commit()
-        except:
-            print ("Couldn't insert\nsql={0}".format(sql))
-
-class sql_reader:
-    def __init__(self, host, login, passwd, database, fields):
-        """
-        """
-        self.host = host
-        self.login = login
-        self.passwd = passwd
-        self.database = database
-        self.labels = fields
-
-        self.fields = fields
-
-    @property
-    def conn(self):
-        cnx = sqlc.connect(user=self.login,
-                           password=self.passwd,
-                           host=self.host,
-                           database=self.database)
-        return cnx
+            self.conn.commit()
+        except sqlc.Error as e:
+            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".
+                   format(e.errno, e.msg, sql))
+        except Exception as e:
+            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".
+                   format(e.errno, e.msg, sql))
+        finally:
+            cur.close()
 
     def get_last_record(self):
-        c = self.conn
-        cur = c.cursor()
-        sql = ("SELECT " + ', '.join(self.fields) +
+        cur = self.cursor()
+        sql = ("SELECT " + ', '.join(self.labels) +
                " FROM snapshot_log WHERE id = (SELECT MAX(id) FROM "
                "snapshot_log);")
         cur.execute(sql)
         rows = cur.fetchall()
-        c.close()
+        cur.close()
         return rows
 
     def get_all_rows(self):
-        c = self.conn
-        cur = c.cursor()
+        cur = self.cursor()
         sql = ("SELECT * FROM snapshot_log;")
         cur.execute(sql)
         r = cur.fetchall()
-        c.close()
+        cur.close()
         return r
 
     # def get_reduced_log(self, name, compfunc, t):
@@ -197,14 +191,15 @@ class sql_reader:
     #                     cur.execute(sql, (ends[idx], 0))
 
     def get_last_record_dict(self):
-        c = self.conn
-        cur = c.cursor()
-        sql = ("SELECT " + ', '.join(self.fields) +
+        cur = self.cursor()
+        sql = ("SELECT " + ', '.join(self.labels) +
                " FROM snapshot_log WHERE id = (SELECT MAX(id) FROM "
                "snapshot_log);")
         cur.execute(sql)
         rows = cur.fetchall()
-        return dict_factory(cur, rows[0])
+        res = dict_factory(cur, rows[0])
+        cur.close()
+        return res
 
 def greaterthan(a, b):
     return b > a

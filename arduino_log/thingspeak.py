@@ -12,16 +12,11 @@ class ThingspeakInterface():
             self.target_db = config_data["localDB"]
             self.labels = config_data["labels"]
             self.timespec = config_data["thingspeak_freq"]
-            self.sqlr = sqli.sql_reader(config_data["host"],
-                                        config_data["login"],
-                                        config_data["passwd"],
-                                        config_data["database"],
-                                        config_data["labels"])
-            self.sqlw = sqli.sql_writer(config_data["host"],
-                                        config_data["login"],
-                                        config_data["passwd"],
-                                        config_data["database"],
-                                        config_data["labels"])
+            self.sqlr = sqli.Database(config_data["host"],
+                                      config_data["login"],
+                                      config_data["passwd"],
+                                      config_data["database"],
+                                      config_data["labels"])
         self.s = sched.scheduler(time.time, time.sleep)
 
     def tweet(self, message):
@@ -76,7 +71,7 @@ class ThingspeakInterface():
             conn.close()
             self.s.enter(self.timespec, 1, self.send_data, ())
         except httplib.HTTPException as http_exception:
-            self.sqlw.insert_alert("Connection failed: {0}".format(http_exception.message), 0,0,0)
+            self.sqlr.insert_alert("Connection failed: {0}".format(http_exception.message), 0,0,0)
             print("Connection failed: {0}".format(http_exception.message))
             # try again in 5
             self.s.enter(300, 1, self.send_data, ())
