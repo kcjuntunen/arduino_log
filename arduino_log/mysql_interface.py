@@ -19,29 +19,50 @@ class Database:
 
     @property
     def conn(self):
-        if self._db is None:
-            self._db = sqlc.connect(user=self.login,
-                                    password=self.passwd,
-                                    host=self.host,
-                                    database=self.database)
-        return self._db
+        try:
+            if self._db is None:
+                self._db = sqlc.connect(user=self.login,
+                                        password=self.passwd,
+                                        host=self.host,
+                                        database=self.database)
+                
+        except sqlc.Error as e:
+            print ("MySQL exception #{0}: {1}".format(e.errno, e.msg))
+        except Exception as e:
+            print ("Exception #{0}: {1}".format(e.errno, e.msg))
+        finally:
+            return self._db
 
     def cursor(self):
         return self.conn.cursor()
 
     def get_db_version(self):
-        c = self.conn
-        cur = c.cursor()
-        cur.execute('SELECT VERSION();')
-        data = cur.fetchone()
-        return "MySQL/Maria DB version information:\n%s" % data
+        try:
+            c = self.conn
+            cur = c.cursor()
+            cur.execute('SELECT VERSION();')
+            data = cur.fetchone()
+            return "MySQL/Maria DB version information:\n%s" % data
+        except sqlc.Error as e:
+            print ("MySQL exception #{0}: {1}".format(e.errno, e.msg))
+            return None
+        except Exception as e:
+            print ("Exception #{0}: {1}".format(e.errno, e.msg))
+            return None
 
     def show_tables(self):
-        c = self.conn
-        cur = c.cursor()
-        sql = ("SHOW TABLES;")
-        cur.execute(sql)
-        return cur.fetchall()
+        try:
+            c = self.conn
+            cur = c.cursor()
+            sql = ("SHOW TABLES;")
+            cur.execute(sql)
+            return cur.fetchall()
+        except sqlc.Error as e:
+            print ("MySQL exception #{0}: {1}".format(e.errno, e.msg))
+            return None
+        except Exception as e:
+            print ("Exception #{0}: {1}".format(e.errno, e.msg))
+            return None
 
     def print_tables(self):
         print "------------------\nTables\n------------------"
@@ -58,8 +79,16 @@ class Database:
                       f + " DECIMAL(10,2) "
                       ")")
         cur = self.cursor()
-        cur.execute(create_sql)
-        cur.close()
+        try:
+            cur.execute(create_sql)
+        except sqlc.Error as e:
+            print ("MySQL exception #{0}: {1}".format(e.errno, e.msg))
+            return None
+        except Exception as e:
+            print ("Exception #{0}: {1}".format(e.errno, e.msg))
+            return None
+        finally:
+            cur.close()
 
     def create_message_table(self):
         sql = ("CREATE TABLE IF NOT EXISTS message_log "
@@ -195,11 +224,14 @@ class Database:
         sql = ("SELECT " + ', '.join(self.labels) +
                " FROM snapshot_log WHERE id = (SELECT MAX(id) FROM "
                "snapshot_log);")
-        cur.execute(sql)
-        rows = cur.fetchall()
-        res = dict_factory(cur, rows[0])
-        cur.close()
-        return res
+        try:
+            cur.execute(sql)
+            rows = cur.fetchall()
+            res = dict_factory(cur, rows[0])
+            cur.close()
+            return res
+        except:
+            return None
 
 def greaterthan(a, b):
     return b > a
