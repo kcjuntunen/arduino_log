@@ -173,6 +173,7 @@ class Database:
         cur.execute(sql)
         rows = cur.fetchall()
         cur.close()
+        self.conn.close()
         return rows
 
     def get_all_rows(self):
@@ -181,6 +182,7 @@ class Database:
         cur.execute(sql)
         r = cur.fetchall()
         cur.close()
+        self.conn.close()
         return r
 
     # def get_reduced_log(self, name, compfunc, t):
@@ -229,6 +231,7 @@ class Database:
             rows = cur.fetchall()
             res = dict_factory(cur, rows[0])
             cur.close()
+            self.conn.close()
             return res
         except:
             return None
