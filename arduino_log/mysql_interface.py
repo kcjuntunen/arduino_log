@@ -13,7 +13,8 @@ class Database:
         self.database = database
         self.labels = fields
         self._db = None
-        if not len(self.show_tables()) > 1:
+        st = self.show_tables()
+        if not st is None and not len(st) > 1:
             self.create_table(fields)
             self.create_message_table()
 
@@ -36,6 +37,12 @@ class Database:
     def cursor(self):
         return self.conn.cursor()
 
+    def close(self):
+        self.conn.commit()
+        self.cursor().close()
+        self.conn.close()
+        self._db = None
+
     def get_db_version(self):
         try:
             c = self.conn
@@ -47,7 +54,10 @@ class Database:
             print ("MySQL exception #{0}: {1}".format(e.errno, e.msg))
             return None
         except Exception as e:
-            print ("Exception #{0}: {1}".format(e.errno, e.msg))
+            msg = ""
+            for arg in e.args:
+                msg = msg + arg + "\n"
+            print ("General Exception: {0}".format(msg))
             return None
 
     def show_tables(self):
@@ -61,7 +71,10 @@ class Database:
             print ("MySQL exception #{0}: {1}".format(e.errno, e.msg))
             return None
         except Exception as e:
-            print ("Exception #{0}: {1}".format(e.errno, e.msg))
+            msg = ""
+            for arg in e.args:
+                msg = msg + arg + "\n"
+            print ("General Exception: {0}".format(msg))
             return None
 
     def print_tables(self):
@@ -106,7 +119,7 @@ class Database:
         except Exception as e:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
         finally:
-            cur.close()
+            self.close()
 
     def insert_data(self, json_string):
         json_ob = json.loads(json_string)
@@ -119,7 +132,7 @@ class Database:
         cur = self.cursor()
         try:
             cur.execute(sql)
-            self.conn.commit()
+            #self.conn.commit()
         except sqlc.Error as e:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".
                    format(e.errno, e.msg, sql))
@@ -127,7 +140,7 @@ class Database:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".
                    format(-1, e, sql))
         finally:
-            cur.close()
+            self.close()
 
     def insert_dict(self, dict_data):
         fields = ', '.join([f for f in dict_data])
@@ -138,13 +151,13 @@ class Database:
         cur = self.cursor()
         try:
             cur.execute(sql)
-            self.conn.commit()
+            #self.conn.commit()
         except sqlc.Error as e:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
         except Exception as e:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
         finally:
-            cur.close()
+            self.close()
 
     def insert_alert(self, msg, email, tweet, stat):
         sql = ("INSERT INTO message_log (timestamp, message, "
@@ -155,7 +168,7 @@ class Database:
         cur = self.conn.cursor()
         try:
             cur.execute(sql)
-            self.conn.commit()
+            #self.conn.commit()
         except sqlc.Error as e:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".
                    format(e.errno, e.msg, sql))
@@ -163,7 +176,7 @@ class Database:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".
                    format(e.errno, e.msg, sql))
         finally:
-            cur.close()
+            self.close()
 
     def get_last_record(self):
         cur = self.cursor()
@@ -172,8 +185,8 @@ class Database:
                "snapshot_log);")
         cur.execute(sql)
         rows = cur.fetchall()
-        cur.close()
-        self.conn.close()
+        #cur.close()
+        self.close()
         return rows
 
     def get_all_rows(self):
@@ -181,8 +194,8 @@ class Database:
         sql = ("SELECT * FROM snapshot_log;")
         cur.execute(sql)
         r = cur.fetchall()
-        cur.close()
-        self.conn.close()
+        #cur.close()
+        self.close()
         return r
 
     # def get_reduced_log(self, name, compfunc, t):
@@ -230,8 +243,8 @@ class Database:
             cur.execute(sql)
             rows = cur.fetchall()
             res = dict_factory(cur, rows[0])
-            cur.close()
-            self.conn.close()
+            #cur.close()
+            self.close()
             return res
         except:
             return None
