@@ -2,6 +2,7 @@ import mysql.connector as sqlc
 import json
 import sys, datetime
 import utility as u
+import sched, time
 
 class Database:
     def __init__(self, host, login, passwd, database, fields):
@@ -29,6 +30,10 @@ class Database:
                 
         except sqlc.Error as e:
             print ("MySQL exception #{0}: {1}".format(e.errno, e.msg))
+            if e.errno == 2003:
+                s = sched.scheduler(time.time, time.sleep)
+                s.enter(60, 1, lambda:self.conn, ())
+                s.run()
         except Exception as e:
             print ("Exception #{0}: {1}".format(e.errno, e.msg))
         finally:
@@ -235,17 +240,19 @@ class Database:
     #                     cur.execute(sql, (ends[idx], 0))
 
     def get_last_record_dict(self):
-        cur = self.cursor()
         sql = ("SELECT " + ', '.join(self.labels) +
                " FROM snapshot_log WHERE id = (SELECT MAX(id) FROM "
                "snapshot_log);")
         try:
+            cur = self.cursor()
             cur.execute(sql)
             rows = cur.fetchall()
             res = dict_factory(cur, rows[0])
             #cur.close()
             self.close()
             return res
+        except AttributeError as ae:
+            print ("{0}\nCan't get last record.".format(e.message))
         except:
             return None
 
