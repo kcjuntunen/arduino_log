@@ -35,7 +35,7 @@ class Database:
                 s.enter(60, 1, lambda:self.conn, ())
                 s.run()
         except Exception as e:
-            print ("Exception #{0}: {1}".format(e.errno, e.msg))
+            print ("Exception: {0}".format(e.message))
         finally:
             return self._db
 
@@ -103,7 +103,7 @@ class Database:
             print ("MySQL exception #{0}: {1}".format(e.errno, e.msg))
             return None
         except Exception as e:
-            print ("Exception #{0}: {1}".format(e.errno, e.msg))
+            print ("Exception: {0}".format(e.message))
             return None
         finally:
             cur.close()
@@ -120,9 +120,11 @@ class Database:
         try:
             cur.execute(sql)
         except sqlc.Error as e:
-            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
+            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}"
+                   .format(e.errno, e.msg, sql))
         except Exception as e:
-            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
+            print ("Error: {0}\nCouldn't insert\nsql={1}"
+                   .format(e.message, sql))
         finally:
             self.close()
 
@@ -142,8 +144,8 @@ class Database:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".
                    format(e.errno, e.msg, sql))
         except Exception as e:
-            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".
-                   format(-1, e, sql))
+            print ("Error: {0}\nCouldn't insert\nsql={1}".
+                   format(e.message, sql))
         finally:
             self.close()
 
@@ -158,9 +160,11 @@ class Database:
             cur.execute(sql)
             #self.conn.commit()
         except sqlc.Error as e:
-            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
+            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}"
+                   .format(e.errno, e.msg, sql))
         except Exception as e:
-            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".format(e.errno, e.msg, sql))
+            print ("Error: {0}\nCouldn't insert\nsql={1}"
+                   .format(e.message, sql))
         finally:
             self.close()
 
@@ -178,8 +182,8 @@ class Database:
             print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".
                    format(e.errno, e.msg, sql))
         except Exception as e:
-            print ("Error #{0}: {1}\nCouldn't insert\nsql={2}".
-                   format(e.errno, e.msg, sql))
+            print ("Error: {0}\nCouldn't insert\nsql={1}".
+                   format(e.message, sql))
         finally:
             self.close()
 
