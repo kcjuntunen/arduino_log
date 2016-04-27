@@ -5,8 +5,12 @@ import utility as u
 import sched, time
 
 class Database:
+    """
+Handler for my arduino's JSON output.
+    """
     def __init__(self, host, login, passwd, database, fields):
         """
+Get necessary vars and set up tables.
         """
         self.host = host
         self.login = login
@@ -21,6 +25,15 @@ class Database:
 
     @property
     def conn(self):
+        """
+This is a cross between other connection properties I've seen
+and my own experimentation for dealing with an annoyingly
+intermittent connection.
+
+I guess it'd be nice if it could wait a while and try again in
+the event of a missing connection, but I suppose it just waits 
+60 seconds and then crashes.
+        """
         try:
             if self._db is None:
                 self._db = sqlc.connect(user=self.login,
@@ -40,15 +53,24 @@ class Database:
             return self._db
 
     def cursor(self):
+        """
+Access the conn property and return a cursor.
+        """
         return self.conn.cursor()
 
     def close(self):
+        """
+Commit, and close everything to ensure current records.
+        """
         self.conn.commit()
         self.cursor().close()
         self.conn.close()
         self._db = None
 
     def get_db_version(self):
+        """
+Return db verison.
+        """
         try:
             c = self.conn
             cur = c.cursor()
@@ -66,6 +88,9 @@ class Database:
             return None
 
     def show_tables(self):
+        """
+See what tables are in the db.
+        """
         try:
             c = self.conn
             cur = c.cursor()
@@ -83,6 +108,9 @@ class Database:
             return None
 
     def print_tables(self):
+        """
+List tables in the db.
+        """
         print "------------------\nTables\n------------------"
         cnt = 0
         for x in self.show_tables():
@@ -90,6 +118,10 @@ class Database:
             print ("{0}.) {1}".format(cnt, x[0]))
 
     def create_table(self, fields):
+        """
+Get fields we're gonna use from an array. All of them are 
+DECIMAL(10,2).
+        """
         f = ' DECIMAL(10,2), '.join(fields)
         create_sql = ("CREATE TABLE IF NOT EXISTS snapshot_log "
                       "(id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, "
@@ -109,6 +141,10 @@ class Database:
             cur.close()
 
     def create_message_table(self):
+        """
+I thought it might be interesting to be able to look back at
+when messages were sent, and using what platforms.
+        """
         sql = ("CREATE TABLE IF NOT EXISTS message_log "
                "(id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, "
                "timestamp TIMESTAMP, "
@@ -129,6 +165,10 @@ class Database:
             self.close()
 
     def insert_data(self, json_string):
+        """
+If the JSON is a dictionary constructed according to the `labels'
+array in the config file, we can just insert it.
+        """
         json_ob = json.loads(json_string)
         fields = ', '.join([f for f in json_ob])
         values = ', '.join([str(json_ob[u.unicode_to_string(f)])
@@ -150,6 +190,11 @@ class Database:
             self.close()
 
     def insert_dict(self, dict_data):
+        """
+If the Python dictionary is a dictionary constructed 
+according to the `labels' array in the config file, we can
+just insert it.
+        """
         fields = ', '.join([f for f in dict_data])
         values = ', '.join([str(dict_data[f]) for f in dict_data])
         sql = ("INSERT INTO snapshot_log (timestamp, " + fields +
@@ -169,6 +214,9 @@ class Database:
             self.close()
 
     def insert_alert(self, msg, email, tweet, stat):
+        """
+Insert a record into the message_log table.
+        """
         sql = ("INSERT INTO message_log (timestamp, message, "
                "email, tweet, status) VALUES "
                "(NOW(), \"{0}\", {1}, {2}, {3});".
@@ -188,6 +236,10 @@ class Database:
             self.close()
 
     def get_last_record(self):
+        """
+Return the most recent record in the snapshot_log table, but
+just the fields maching the `labels' array in the config file.
+        """
         cur = self.cursor()
         sql = ("SELECT " + ', '.join(self.labels) +
                " FROM snapshot_log WHERE id = (SELECT MAX(id) FROM "
@@ -199,6 +251,9 @@ class Database:
         return rows
 
     def get_all_rows(self):
+        """
+Dump the snapshot_log table.
+        """
         cur = self.cursor()
         sql = ("SELECT * FROM snapshot_log;")
         cur.execute(sql)
@@ -244,6 +299,11 @@ class Database:
     #                     cur.execute(sql, (ends[idx], 0))
 
     def get_last_record_dict(self):
+        """
+Get a Python dictionary of the last record. This can easily 
+serialize into JSON, or be urlencoded into a bunch of thingspeak
+arguments.
+        """
         sql = ("SELECT " + ', '.join(self.labels) +
                " FROM snapshot_log WHERE id = (SELECT MAX(id) FROM "
                "snapshot_log);")
@@ -260,22 +320,19 @@ class Database:
         except:
             return None
 
-def greaterthan(a, b):
-    return b > a
-
-def lessthan(a, b):
-    return a < b
-
-def eq(a, b):
-    return a == b
-
 def dig_fields(json_data):
+    """
+This can be used to examine a JSON string and return a `labels'
+array for the config file.
+    """
     data = json.loads(json_data)
     fields = [f for f in data]
     return fields
 
 def dict_factory(cursor, row):
     """
+Return a Python dictionary from a cursor and a record.
+
 I got this snippet from <http://www.cdotson.com/2014/06/
 generating-json-documents-from-sqlite-databases-in-python/>
     """
