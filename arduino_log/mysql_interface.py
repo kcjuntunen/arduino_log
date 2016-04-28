@@ -316,7 +316,7 @@ arguments.
             self.close()
             return res
         except AttributeError as ae:
-            print ("{0}\nCan't get last record.".format(e.message))
+            print ("{0}\nCan't get last record.".format(ae.message))
         except:
             return None
 
