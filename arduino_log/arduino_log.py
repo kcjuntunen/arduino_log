@@ -20,7 +20,7 @@ class EchoHandler(BaseRequestHandler):
             # received = self.request.recv(2**16)
             global CURRENT_RFID # so multiple threads can touch it
                                 # is that a bad idea? It seems to work.
-            self.request.sendall(str(CURRENT_RFID))
+            self.request.sendall(str(CURRENT_RFID) + "\n")
         except Exception as e:
             print "Error: {0}".format(e.message)
         finally:
@@ -239,7 +239,8 @@ Lots of email is annoying so it can only send every 5 minutes.
 
 
     def loop(self):
-        if "rfid_port" in self.config_data:
+        if (("rfid_port" in self.config_data) and
+            (self.config_data ["rfid_port"] > 1024)):
             Thread(target=self.start_rfid_server,
                    args=(int(self.config_data ["rfid_port"]),)).start()
             # self.start_rfid_server(int(self.config_data ["rfid_port"]))
