@@ -3,6 +3,7 @@ import datetime, serial, smtplib, json
 import mysql_interface as sqli
 from threading import Timer
 import thingspeak as thsp
+import ip
 import utility as u
 
 ARDUINO_POLL = '\x12' # Device Control 2
@@ -50,8 +51,11 @@ the variables could be updated while arduino-log is running.
         self.sentinlastfive = not self.sentinlastfive
 
     def poll(self):
-        self.ser.write(ARDUINO_POLL)
-        Timer(self.logfreq, self.poll, ()).start()
+        if self.logfreq > 1:            
+            self.ser.write(ARDUINO_POLL)
+            Timer(self.logfreq, self.poll, ()).start()
+        else:
+            print("Not polling")
 
     def ok_to_send(self):
         return u.ok_to_send(self.day_start, self.day_end)
@@ -209,47 +213,6 @@ Lots of email is annoying so it can only send every 5 minutes.
                 Timer(300, self.toggle_sentinlastfive).start()
         self.sqlw.insert_alert(message, esent, tsent, 0)
 
-    # def check_return(self, datadict):
-    #     for a in self.alerts:
-    #         try:
-    #             b = u.unicode_to_string(a)
-    #             if abs(datadict [b]) < abs(self.config_data[b]):
-    #                 if self.ok_to_send() and self.sent[b]:
-    #                     message = b + " returned to normal in " + self.unit
-    #                     esent = 0
-    #                     if self.send_email(self.unit, message):
-    #                         esent = 1
-    #                     tsent = 0
-    #                     if self.thingspeak.tweet(message):
-    #                         tsent = 1
-    #                     self.sqlw.insert_alert(message, esent, tsent, 0)
-    #                     self.sent[b] = False
-    #         except Exception as e:
-    #             print "Exception: {0}\n".format(e)
-
-    # def decode_string(self, line, skip):
-    #     try:
-    #         json_ob = json.loads(line)
-    #         if json_ob.has_key("Poll"):
-    #             return json_ob["Poll"]
-    #     except ValueError as ve:
-    #         return None
-
-    # def decode_string2(self, line, skip):
-    #     data = {}
-    #     line_array = line.split(":")
-    #     if not len(line_array) == len(self.labels) + abs(skip):
-    #         return data
-    #     count = abs(skip) * -1
-    #     for field in line_array:
-    #         if count > -1:
-    #             try:
-    #                 data[u.unicode_to_string(self.labels[count])] = float(field)
-    #             except:
-    #                 return data
-    #         count += 1
-    #     return data
-
     def loop(self):
         while True:
             try:
@@ -259,7 +222,6 @@ Lots of email is annoying so it can only send every 5 minutes.
                 exit(1)
 
 def start():
-    import ip as ip
     ip.broadcast_ip()
     moni = arduino_log('/etc/arduino_log.json')
     moni.poll()
