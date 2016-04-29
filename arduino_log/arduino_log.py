@@ -1,12 +1,30 @@
 #!/usr/bin/env python
 import datetime, serial, smtplib, json
 import mysql_interface as sqli
-from threading import Timer
+from threading import Timer, Thread
 import thingspeak as thsp
 import ip
 import utility as u
+from SocketServer import BaseRequestHandler, TCPServer
 
 ARDUINO_POLL = '\x12' # Device Control 2
+CURRENT_RFID = 0x00000000
+
+class EchoHandler(BaseRequestHandler):
+    """
+
+    """
+    def handle(self):
+        try:
+            # print "Client connected:", self.client_address
+            # received = self.request.recv(2**16)
+            global CURRENT_RFID # so multiple threads can touch it
+                                # is that a bad idea? It seems to work.
+            self.request.sendall(str(CURRENT_RFID))
+        except Exception as e:
+            print "Error: {0}".format(e.message)
+        finally:
+            self.request.close()
 
 class arduino_log():
     """
@@ -136,9 +154,16 @@ optional. Merely sending alerts would be useful.
     def process_rfid(self, data):
         """
 Drop this data somewhere it'll be visible to apache/httpd and php.
-This will probably be unusable without a local server of some sort.
+Updates the current_rfid bar variable, which is served by a little
+SocketServer.
         """
-        pass
+        try:
+            global CURRENT_RFID # so multiple threads can touch it
+                                # is that a bad idea? It seems to work.
+            CURRENT_RFID = data["UID"]
+        except Exception as e:
+            print ("Exception: {0}\n"
+                   "Couldn't get UID; data={1}".format(e.message, data))
 
     def process_event(self, data):
         """
@@ -209,7 +234,16 @@ Lots of email is annoying so it can only send every 5 minutes.
                 Timer(300, self.toggle_sentinlastfive).start()
         self.sqlw.insert_alert(message, esent, tsent, 0)
 
+    def start_rfid_server(self, port):
+        TCPServer(('', port), EchoHandler).serve_forever()
+
+
     def loop(self):
+        if "rfid_port" in self.config_data:
+            Thread(target=self.start_rfid_server,
+                   args=(int(self.config_data ["rfid_port"]),)).start()
+            # self.start_rfid_server(int(self.config_data ["rfid_port"]))
+
         while True:
             try:
                 self.listen()
