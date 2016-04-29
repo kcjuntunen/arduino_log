@@ -16,7 +16,9 @@
     "timezone": "EST",
     "day_start": "13:00",
     "day_end": "20:30",
+    "log_freq": 5,
     "thingspeak_freq": 30,
+    "rfid_port": 8080,
     "labels": ["a", "b", "c"],
     "alerts": [["a", 998.11, "Too much pressure"], ["c", 70, "Too hot"]]
 }
