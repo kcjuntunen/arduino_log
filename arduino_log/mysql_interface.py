@@ -31,7 +31,7 @@ and my own experimentation for dealing with an annoyingly
 intermittent connection.
 
 I guess it'd be nice if it could wait a while and try again in
-the event of a missing connection, but I suppose it just waits 
+the event of a missing connection, but I suppose it just waits
 60 seconds and then crashes.
         """
         try:
@@ -40,15 +40,15 @@ the event of a missing connection, but I suppose it just waits
                                         password=self.passwd,
                                         host=self.host,
                                         database=self.database)
-                
+
         except sqlc.Error as e:
-            print ("MySQL exception #{0}: {1}".format(e.errno, e.msg))
+            print ("MySQL exception #{0} getting connection: {1}".format(e.errno, e.msg))
             if e.errno == 2003:
                 s = sched.scheduler(time.time, time.sleep)
                 s.enter(60, 1, lambda:self.conn, ())
                 s.run()
         except Exception as e:
-            print ("Exception: {0}".format(e.message))
+            print ("Couldn't get connection property: {0}".format(e.message))
         finally:
             return self._db
 
@@ -84,7 +84,7 @@ Return db verison.
             msg = ""
             for arg in e.args:
                 msg = msg + arg + "\n"
-            print ("General Exception: {0}".format(msg))
+            print ("Couldn't get db version: {0}".format(msg))
             return None
 
     def show_tables(self):
@@ -104,7 +104,7 @@ See what tables are in the db.
             msg = ""
             for arg in e.args:
                 msg = msg + arg + "\n"
-            print ("General Exception: {0}".format(msg))
+            print ("Couldn't get list of tables: {0}".format(msg))
             return None
 
     def print_tables(self):
@@ -119,7 +119,7 @@ List tables in the db.
 
     def create_table(self, fields):
         """
-Get fields we're gonna use from an array. All of them are 
+Get fields we're gonna use from an array. All of them are
 DECIMAL(10,2).
         """
         f = ' DECIMAL(10,2), '.join(fields)
@@ -132,10 +132,10 @@ DECIMAL(10,2).
         try:
             cur.execute(create_sql)
         except sqlc.Error as e:
-            print ("MySQL exception #{0}: {1}".format(e.errno, e.msg))
+            print ("MySQL exception #{0} creating table: {1}".format(e.errno, e.msg))
             return None
         except Exception as e:
-            print ("Exception: {0}".format(e.message))
+            print ("Couldn't create table: {0}".format(e.message))
             return None
         finally:
             cur.close()
@@ -191,7 +191,7 @@ array in the config file, we can just insert it.
 
     def insert_dict(self, dict_data):
         """
-If the Python dictionary is a dictionary constructed 
+If the Python dictionary is a dictionary constructed
 according to the `labels' array in the config file, we can
 just insert it.
         """
@@ -300,7 +300,7 @@ Dump the snapshot_log table.
 
     def get_last_record_dict(self):
         """
-Get a Python dictionary of the last record. This can easily 
+Get a Python dictionary of the last record. This can easily
 serialize into JSON, or be urlencoded into a bunch of thingspeak
 arguments.
         """
@@ -316,8 +316,9 @@ arguments.
             self.close()
             return res
         except AttributeError as ae:
-            print ("{0}\nCan't get last record.".format(ae.message))
-        except:
+            print ("Can't get last record: {0}".format(ae.message))
+        except Exception as e:
+            print ("Can't get last record: {0}".format(e.message))
             return None
 
 def dig_fields(json_data):

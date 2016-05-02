@@ -22,7 +22,7 @@ class EchoHandler(BaseRequestHandler):
                                 # is that a bad idea? It seems to work.
             self.request.sendall(str(CURRENT_RFID) + "\n")
         except Exception as e:
-            print "Error: {0}".format(e.message)
+            print "Couldn't send '{0}': {1}".format(str(CURRENT_RFID), e.message)
         finally:
             self.request.close()
 
@@ -105,9 +105,10 @@ clever enough to support passwords.
                     smtpo = smtplib.SMTP(self.smtp_server)
                     smtpo.sendmail(sender, receivers, message)
                     return True
-            except Exception, e:
-                self.sqlw.insert_alert("Failure sending email: {0}"
-                                       .format(e), 0, 0, 0)
+            except Exception as e:
+                errmsg = "Failure sending email: {0}".format(e.message)
+                print errmsg
+                self.sqlw.insert_alert(errmsg, 0, 0, 0)
                 return False
         else:
             return False
@@ -249,8 +250,7 @@ Lots of email is annoying so it can only send every 5 minutes.
             try:
                 self.listen()
             except Exception as e:
-                print("Exception: {0}\n".format(e.message))
-                exit(1)
+                print("Couldn't read serial input: {0}\n".format(e.message))
 
 def start():
     ip.broadcast_ip()

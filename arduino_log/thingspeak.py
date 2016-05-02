@@ -59,11 +59,11 @@ class ThingspeakInterface():
         """Send data to thingspeak."""
         if self.key == "":
             return False
-        params = self.create_url(self.sqlr.get_last_record_dict())
-        headers = {"Content-type": "application/x-www-form-urlencoded",
-                   "Accept": "text/plain"}
-        conn = httplib.HTTPConnection("api.thingspeak.com:80")
         try:
+            params = self.create_url(self.sqlr.get_last_record_dict())
+            headers = {"Content-type": "application/x-www-form-urlencoded",
+                       "Accept": "text/plain"}
+            conn = httplib.HTTPConnection("api.thingspeak.com:80")
             conn.request("POST", "/update", params, headers)
             response = conn.getresponse()
             #print ("{0}, {1}".format(response.status, response.reason))
@@ -71,7 +71,8 @@ class ThingspeakInterface():
             conn.close()
             self.s.enter(self.timespec, 1, self.send_data, ())
         except httplib.HTTPException as http_exception:
-            self.sqlr.insert_alert("Connection failed: {0}".format(http_exception.message), 0,0,0)
+            self.sqlr.insert_alert("Connection failed: {0}".
+                                   format(http_exception.message), 0,0,0)
             print("Connection failed: {0}".format(http_exception.message))
             # try again in 5
             self.s.enter(300, 1, self.send_data, ())
