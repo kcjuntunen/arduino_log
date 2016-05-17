@@ -12,6 +12,7 @@
     "unit": "Raspberry PI",
     "smtp_server": "",
     "sender": "",
+    "passwd": "",
     "recipients": [""],
     "timezone": "EST",
     "day_start": "13:00",

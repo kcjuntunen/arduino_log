@@ -44,6 +44,7 @@ could be updated while arduino-log is running.
         self.unit = self.config_data["unit"]
         self.smtp_server = self.config_data["smtp_server"]
         self.sender = self.config_data["sender"]
+        self.passwd = self.config_data["passwd"]
         self.recipients = self.config_data["recipients"]
         self.day_start = self.config_data["day_start"]
         self.day_end = self.config_data["day_end"]
@@ -86,6 +87,7 @@ clever enough to support passwords.
         if (len(self.sender) > 0 or len(self.recipients) < 1):
             try:
                 sender = self.sender
+                passwd = self.passwd
                 receivers = self.recipients
                 message = "From: " + self.unit  + " <no_real_email@nobody.com>"
                 message += "\nTo: "
@@ -103,7 +105,10 @@ clever enough to support passwords.
                     message += subj + "\n\n"
                     message += msg + "\n"
                     smtpo = smtplib.SMTP(self.smtp_server)
+                    smtpo.starttls()
+                    smtpo.login(sender.split('@', 1)[0], passwd)
                     smtpo.sendmail(sender, receivers, message)
+                    smtpo.quit()
                     return True
             except Exception as e:
                 errmsg = "Failure sending email: {0}".format(e.message)

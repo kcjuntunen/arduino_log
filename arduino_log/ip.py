@@ -9,6 +9,7 @@ import array
 def send_email(subj, msg):
     try:
         sender = config_data["sender"]
+        passwd = config_data["passwd"]
         receivers = config_data["recipients"]
         message = "From: " + config_data["unit"]  + " <no_real_email@nobody.com>"
         message += "\nTo: "
@@ -26,7 +27,10 @@ def send_email(subj, msg):
         message += subj + "\n\n"
         message += msg + "\n"
         smtpo = smtplib.SMTP(config_data["smtp_server"])
+        smtpo.starttls()
+        smtpo.login(sender.split('@', 1)[0], passwd)
         smtpo.sendmail(sender, receivers, message)
+        smtpo.quit()
         #print "Sent email"
     except Exception, e:
         print "Failure sending email. %s" % e
