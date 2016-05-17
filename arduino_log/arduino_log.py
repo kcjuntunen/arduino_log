@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 import datetime, serial, smtplib, json
 import mysql_interface as sqli
 from threading import Timer, Thread
@@ -44,7 +44,7 @@ could be updated while arduino-log is running.
         self.unit = self.config_data["unit"]
         self.smtp_server = self.config_data["smtp_server"]
         self.sender = self.config_data["sender"]
-        self.passwd = self.config_data["passwd"]
+        self.passwd = self.config_data["eml_passwd"]
         self.recipients = self.config_data["recipients"]
         self.day_start = self.config_data["day_start"]
         self.day_end = self.config_data["day_end"]

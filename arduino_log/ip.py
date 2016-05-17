@@ -2,6 +2,8 @@ import socket
 import fcntl
 import struct
 import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 import time
 import json
 import array
@@ -9,9 +11,12 @@ import array
 def send_email(subj, msg):
     try:
         sender = config_data["sender"]
-        passwd = config_data["passwd"]
+        passwd = config_data["eml_passwd"]
         receivers = config_data["recipients"]
-        message = "From: " + config_data["unit"]  + " <no_real_email@nobody.com>"
+        message = ("From: " +
+                   config_data["unit"] +
+                   " <no_real_email@nobody.com>")
+        
         message += "\nTo: "
 
         rec_cnt = len(receivers)
@@ -64,7 +69,8 @@ def broadcast_ip():
         while 'wlan0' not in all_interfaces():
             time.sleep(15)
         send_email("Unit: " + config_data["unit"] + " booted.",
-                   "IP: " + get_ip_address('wlan0'))
+                   "<html><head></head><body><img src=\"https://www.\
+                   google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png\"><p>IP:" + get_ip_address('wlan0') + "</p></body></html>")
     else:
         print("Not sending...")
 

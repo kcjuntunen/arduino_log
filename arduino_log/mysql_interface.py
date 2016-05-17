@@ -44,9 +44,7 @@ the event of a missing connection, but I suppose it just waits
         except sqlc.Error as e:
             print ("MySQL exception #{0} getting connection: {1}".format(e.errno, e.msg))
             if e.errno == 2003:
-                s = sched.scheduler(time.time, time.sleep)
-                s.enter(60, 1, lambda:self.conn, ())
-                s.run()
+                exit(-1)
         except Exception as e:
             print ("Couldn't get connection property: {0}".format(e.message))
         finally:
