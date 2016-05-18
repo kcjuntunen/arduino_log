@@ -94,7 +94,7 @@ def broadcast_ip():
         emailer.send_email(config_data["smtp_server"],
                            config_data["sender"],
                            config_data["eml_passwd"],
-                           config_data["recipients"],
+                           [config_data["recipients"][0]],
                            "Unit: " + config_data["unit"] + " booted.",
                            message)
 

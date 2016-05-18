@@ -227,8 +227,8 @@ config file.
 Currently, there are two places to send alerts: twitter, and email.
         """
         today = datetime.datetime.now()
-        loc_time = (" in " + str(self.unit).lower() +
-                    " @ " + today.strftime('%b %d %Y %H:%M'))
+        loc_time = ("<br>in " + str(self.unit).lower() +
+                    "<br> @ " + today.strftime('%b %d %Y %H:%M'))
 
         message = msg.format(loc_time)
 
