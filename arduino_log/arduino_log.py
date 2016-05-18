@@ -1,6 +1,12 @@
 #!/usr/bin/python
-import datetime, serial, smtplib, json
+import datetime, serial, json
 import mysql_interface as sqli
+
+import HTMLParser
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 from threading import Timer, Thread
 import thingspeak as thsp
 import ip
@@ -9,6 +15,17 @@ from SocketServer import BaseRequestHandler, TCPServer
 
 ARDUINO_POLL = '\x12' # Device Control 2
 CURRENT_RFID = 0x00000000
+
+class TagStripper(HTMLParser.HTMLParser):
+    collected_data = ""
+    def __init__(self):
+        HTMLParser.HTMLParser.__init__(self)
+
+    def handle_data(self, data):
+        self.collected_data = self.collected_data + data
+
+    def get_collected_data(self):
+        return self.collected_data
 
 class EchoHandler(BaseRequestHandler):
     """
@@ -19,7 +36,7 @@ class EchoHandler(BaseRequestHandler):
             # print "Client connected:", self.client_address
             # received = self.request.recv(2**16)
             global CURRENT_RFID # so multiple threads can touch it
-                                # is that a bad idea? It seems to work.
+            # is that a bad idea? It seems to work.
             self.request.sendall(str(CURRENT_RFID) + "\n")
         except Exception as e:
             print "Couldn't send '{0}': {1}".format(str(CURRENT_RFID), e.message)
@@ -38,33 +55,33 @@ could be updated while arduino-log is running.
         """
         with open(config_file) as data_file:
             self.config_data = json.load(data_file)
-        self.local_db = self.config_data["localDB"]
-        self.key = self.config_data["key"]
-        self.api_key = self.config_data["api_key"]
-        self.unit = self.config_data["unit"]
-        self.smtp_server = self.config_data["smtp_server"]
-        self.sender = self.config_data["sender"]
-        self.passwd = self.config_data["eml_passwd"]
-        self.recipients = self.config_data["recipients"]
-        self.day_start = self.config_data["day_start"]
-        self.day_end = self.config_data["day_end"]
-        self.alerts = self.config_data["alerts"]
-        self.logfreq = self.config_data["log_freq"]
-        self.thspfreq = self.config_data["thingspeak_freq"]
-        self.ser = serial.Serial(self.config_data["serial_port"],
-                                 self.config_data["baud"])
-        self.sqlw = sqli.Database(self.config_data["host"],
-                                  self.config_data["login"],
-                                  self.config_data["passwd"],
-                                  self.config_data["database"],
-                                  self.config_data["labels"])
-        self.thingspeak = thsp.ThingspeakInterface(config_file)
-        self.sentinlastfive = False
-        self.sent = {}
-        for i in self.config_data["alerts"]:
-            self.sent[i[0]] = [False, False, True]
+            self.local_db = self.config_data["localDB"]
+            self.key = self.config_data["key"]
+            self.api_key = self.config_data["api_key"]
+            self.unit = self.config_data["unit"]
+            self.smtp_server = self.config_data["smtp_server"]
+            self.sender = self.config_data["sender"]
+            self.passwd = self.config_data["eml_passwd"]
+            self.recipients = self.config_data["recipients"]
+            self.day_start = self.config_data["day_start"]
+            self.day_end = self.config_data["day_end"]
+            self.alerts = self.config_data["alerts"]
+            self.logfreq = self.config_data["log_freq"]
+            self.thspfreq = self.config_data["thingspeak_freq"]
+            self.ser = serial.Serial(self.config_data["serial_port"],
+                                     self.config_data["baud"])
+            self.sqlw = sqli.Database(self.config_data["host"],
+                                      self.config_data["login"],
+                                      self.config_data["passwd"],
+                                      self.config_data["database"],
+                                      self.config_data["labels"])
+            self.thingspeak = thsp.ThingspeakInterface(config_file)
+            self.sentinlastfive = False
+            self.sent = {}
+            for i in self.config_data["alerts"]:
+                self.sent[i[0]] = [False, False, True]
 
-        self.labels = self.config_data["labels"]
+            self.labels = self.config_data["labels"]
 
     def toggle_sentinlastfive(self):
         self.sentinlastfive = not self.sentinlastfive
@@ -79,41 +96,34 @@ could be updated while arduino-log is running.
     def ok_to_send(self):
         return u.ok_to_send(self.day_start, self.day_end)
 
-    def send_email(self, subj, msg):
+    def send_email(self, server, sender, passwd, receivers, subj, msg):
         """
-Sends an email. subj, and msg are self-explanatory. TODO: Make it
-clever enough to support passwords.
+        Sends an email. subj, and msg are self-explanatory.
         """
         if (len(self.sender) > 0 or len(self.recipients) < 1):
             try:
-                sender = self.sender
-                passwd = self.passwd
-                receivers = self.recipients
-                message = "From: " + self.unit  + " <no_real_email@nobody.com>"
-                message += "\nTo: "
-
-                rec_cnt = len(receivers)
-                cnt = 1
-                for s in receivers:
-                    message += "<" + s
-                    message += ">"
-                    if cnt < rec_cnt:
-                        message += ", "
-
-                    message += "\nSubject: "
-
-                    message += subj + "\n\n"
-                    message += msg + "\n"
-                    smtpo = smtplib.SMTP(self.smtp_server)
-                    smtpo.starttls()
-                    smtpo.login(sender.split('@', 1)[0], passwd)
-                    smtpo.sendmail(sender, receivers, message)
-                    smtpo.quit()
-                    return True
+                message = MIMEMultipart('alternative')
+                message['From'] = "no_real_email@nobody.com"
+                message['To']  = ','.join(receivers)
+                message['Subject'] = subj
+                html = msg + "</p></body></html>\n"
+                ts = TagStripper()
+                ts.feed(html)
+                txt = ts.get_collected_data()
+                part1 = MIMEText(txt, 'plain')
+                part2 = MIMEText(html, 'html')
+                message.attach(part1)
+                message.attach(part2)
+                smtpo = smtplib.SMTP(server)
+                smtpo.ehlo()
+                smtpo.starttls()
+                smtpo.login(sender.split('@', 1)[0], passwd)
+                smtpo.sendmail(sender, receivers, message.as_string())
+                smtpo.quit()
+                return True
             except Exception as e:
                 errmsg = "Failure sending email: {0}".format(e.message)
                 print errmsg
-                self.sqlw.insert_alert(errmsg, 0, 0, 0)
                 return False
         else:
             return False
@@ -165,7 +175,7 @@ SocketServer.
         """
         try:
             global CURRENT_RFID # so multiple threads can touch it
-                                # is that a bad idea? It seems to work.
+            # is that a bad idea? It seems to work.
             CURRENT_RFID = data["UID"]
         except Exception as e:
             print ("Exception: {0}\n"
@@ -189,16 +199,14 @@ config file.
             try:
                 if len(alert) > 2:
                     v = alert[1]
-                    if (currentval > v and
-                        not self.sent[k][0]):
+                    if (currentval > v and not self.sent[k][0]):
                         m = alert[2]
                         self.send_alert(m)
                         self.sent[k] = [True, False, False]
                 if len(alert) > 4:
                     v = alert[3]
                     m = alert[4]
-                    if (currentval < v and
-                        not self.sent[k][1]):
+                    if (currentval < v and not self.sent[k][1]):
                         self.send_alert(m)
                         self.sent[k] = [False, True, False]
                 if len(alert) > 5:
@@ -212,15 +220,10 @@ config file.
                         self.sent[k] = [False, False, True]
             except Exception as e:
                 print "Check alerts exception: {0}\n".format(e.message)
-                count = 1
-                for arg in e.args:
-                    print "{0} - {1}".format(count, arg)
-                    count = count + 1
 
     def send_alert(self, msg):
         """
 Currently, there are two places to send alerts: twitter, and email.
-Lots of email is annoying so it can only send every 5 minutes.
         """
         today = datetime.datetime.now()
         message = (msg + " in " + str(self.unit).lower() +
@@ -232,13 +235,16 @@ Lots of email is annoying so it can only send every 5 minutes.
         esent = 0
         if self.thingspeak.tweet(message):
             tsent = 1
-        # Email between certain hours
-        if self.ok_to_send() and not self.sentinlastfive:
-            if self.send_email(self.unit, message):
+            # Email between certain hours
+        if self.ok_to_send():
+            if self.send_email(self.smtp_server,
+                                  self.sender,
+                                  self.passwd,
+                                  self.recipients,
+                                  self.unit,
+                                  message):
                 esent = 1
-                self.sentinlastfive = True
-                Timer(300, self.toggle_sentinlastfive).start()
-        self.sqlw.insert_alert(message, esent, tsent, 0)
+                self.sqlw.insert_alert(message, esent, tsent, 0)
 
     def start_rfid_server(self, port):
         TCPServer(('', port), EchoHandler).serve_forever()

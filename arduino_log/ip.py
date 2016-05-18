@@ -4,37 +4,47 @@ import struct
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import HTMLParser
 import time
 import json
 import array
+
+class TagStripper(HTMLParser.HTMLParser):
+    collected_data = ""
+    def __init__(self):
+        HTMLParser.HTMLParser.__init__(self)
+
+    def handle_data(self, data):
+        self.collected_data = self.collected_data + data
+
+    def get_collected_data(self):
+        return self.collected_data
 
 def send_email(subj, msg):
     try:
         sender = config_data["sender"]
         passwd = config_data["eml_passwd"]
         receivers = config_data["recipients"]
-        message = ("From: " +
-                   config_data["unit"] +
-                   " <no_real_email@nobody.com>")
-        
-        message += "\nTo: "
-
-        rec_cnt = len(receivers)
-        cnt = 1
-        for s in receivers:
-            message += "<" + s
-            message += ">"
-            if cnt < rec_cnt:
-                message += ", "
-
-        message += "\nSubject: "
-
-        message += subj + "\n\n"
-        message += msg + "\n"
+        message = MIMEMultipart('alternative')
+        message['Subject'] = subj
+        message['From'] = (config_data["unit"] +
+                           " <no_real_email@nobody.com>")
+        message['To'] = ','.join(receivers)
+        html = msg
+        ts = TagStripper()
+        ts.feed(html)
+        txt = ts.get_collected_data()
+        part1 = MIMEText(txt, 'plain')
+        part2 = MIMEText(html, 'html')
+        message.attach(part1)
+        message.attach(part2)
+        print message.as_string()
         smtpo = smtplib.SMTP(config_data["smtp_server"])
+        smtpo.ehlo()
         smtpo.starttls()
         smtpo.login(sender.split('@', 1)[0], passwd)
-        smtpo.sendmail(sender, receivers, message)
+        
+        smtpo.sendmail(sender, receivers, message.as_string())
         smtpo.quit()
         #print "Sent email"
     except Exception, e:
@@ -65,12 +75,20 @@ def broadcast_ip():
     with open('/etc/arduino_log.json') as data_file:
         config_data = json.load(data_file)
 
-    if config_data["broadcast_ip"]:        
+    if config_data["broadcast_ip"]:
         while 'wlan0' not in all_interfaces():
             time.sleep(15)
-        send_email("Unit: " + config_data["unit"] + " booted.",
-                   "<html><head></head><body><img src=\"https://www.\
-                   google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png\"><p>IP:" + get_ip_address('wlan0') + "</p></body></html>")
+            message = """
+            <html>
+              <head></head>
+                <body>
+                  <img src=\"https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png\">
+                  <p>IP:" + get_ip_address('wlan0') + "
+                  </p>
+                </body>
+            </html>
+            """
+            send_email("Unit: " + config_data["unit"] + " booted.", message)
     else:
         print("Not sending...")
 

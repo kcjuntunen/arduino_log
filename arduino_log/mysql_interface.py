@@ -217,7 +217,7 @@ Insert a record into the message_log table.
         """
         sql = ("INSERT INTO message_log (timestamp, message, "
                "email, tweet, status) VALUES "
-               "(NOW(), \"{0}\", {1}, {2}, {3});".
+               "(NOW(), '{0}', {1}, {2}, {3});".
                format(msg, email, tweet, stat))
 
         cur = self.conn.cursor()
