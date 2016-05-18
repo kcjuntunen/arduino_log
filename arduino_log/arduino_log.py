@@ -2,10 +2,11 @@
 import datetime, serial, json
 import mysql_interface as sqli
 
-import HTMLParser
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+# import HTMLParser
+# import smtplib
+# from email.mime.multipart import MIMEMultipart
+# from email.mime.text import MIMEText
+import emailer
 
 from threading import Timer, Thread
 import thingspeak as thsp
@@ -16,16 +17,16 @@ from SocketServer import BaseRequestHandler, TCPServer
 ARDUINO_POLL = '\x12' # Device Control 2
 CURRENT_RFID = 0x00000000
 
-class TagStripper(HTMLParser.HTMLParser):
-    collected_data = ""
-    def __init__(self):
-        HTMLParser.HTMLParser.__init__(self)
+# class TagStripper(HTMLParser.HTMLParser):
+#     collected_data = ""
+#     def __init__(self):
+#         HTMLParser.HTMLParser.__init__(self)
 
-    def handle_data(self, data):
-        self.collected_data = self.collected_data + data
+#     def handle_data(self, data):
+#         self.collected_data = self.collected_data + data
 
-    def get_collected_data(self):
-        return self.collected_data
+#     def get_collected_data(self):
+#         return self.collected_data
 
 class EchoHandler(BaseRequestHandler):
     """
@@ -100,17 +101,17 @@ could be updated while arduino-log is running.
         """
         Sends an email. subj, and msg are self-explanatory.
         """
-        if (len(self.sender) > 0 or len(self.recipients) < 1):
+        if (len(sender) > 0 and len(recipients) > 0):
             try:
                 message = MIMEMultipart('alternative')
                 message['From'] = "no_real_email@nobody.com"
                 message['To']  = ','.join(receivers)
                 message['Subject'] = subj
                 html = msg + "</p></body></html>\n"
-                ts = TagStripper()
-                ts.feed(html)
-                txt = ts.get_collected_data()
-                part1 = MIMEText(txt, 'plain')
+                # ts = TagStripper()
+                # ts.feed(html)
+                # txt = ts.get_collected_data()
+                # part1 = MIMEText(txt, 'plain')
                 part2 = MIMEText(html, 'html')
                 message.attach(part1)
                 message.attach(part2)
@@ -226,8 +227,11 @@ config file.
 Currently, there are two places to send alerts: twitter, and email.
         """
         today = datetime.datetime.now()
-        message = (msg + " in " + str(self.unit).lower() +
-                   " @ " + today.strftime('%b %d %Y %H:%M'))
+        loc_time = (" in " + str(self.unit).lower() +
+                    " @ " + today.strftime('%b %d %Y %H:%M'))
+
+        message = msg.format(loc_time)
+
         # Tweet
         # The reason I had to pull in the thingspeak handling class,
         # is that I'm using the thingspeak API to tweet.
@@ -237,7 +241,7 @@ Currently, there are two places to send alerts: twitter, and email.
             tsent = 1
             # Email between certain hours
         if self.ok_to_send():
-            if self.send_email(self.smtp_server,
+            if emailer.send_email(self.smtp_server,
                                   self.sender,
                                   self.passwd,
                                   self.recipients,

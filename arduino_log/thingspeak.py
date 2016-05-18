@@ -1,18 +1,19 @@
 """I'll try and create a bunch of Thingspeak-specific functions."""
 import json, urllib, httplib, sched, time
 import mysql_interface as sqli
-import HTMLParser
+# import HTMLParser
+from emailer import TagStripper
 
-class TagStripper(HTMLParser.HTMLParser):
-    collected_data = ""
-    def __init__(self):
-        HTMLParser.HTMLParser.__init__(self)
+# class TagStripper(HTMLParser.HTMLParser):
+#     collected_data = ""
+#     def __init__(self):
+#         HTMLParser.HTMLParser.__init__(self)
 
-    def handle_data(self, data):
-        self.collected_data = self.collected_data + data
+#     def handle_data(self, data):
+#         self.collected_data = self.collected_data + data
 
-    def get_collected_data(self):
-        return self.collected_data
+#     def get_collected_data(self):
+#         return self.collected_data
 
 class ThingspeakInterface():
     """A class for handling Thingspeak operations."""

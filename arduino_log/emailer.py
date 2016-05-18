@@ -18,21 +18,22 @@ def send_email(server, sender, passwd, receivers, subj, msg):
     """
     Sends an email. subj, and msg are self-explanatory.
     """
-    if (len(self.sender) > 0 or len(self.recipients) < 1):
+    if (len(sender) > 0 or len(receivers) < 1):
         try:
             message = MIMEMultipart('alternative')
             message['From'] = "no_real_email@nobody.com"
             message['To']  = ','.join(receivers)
             message['Subject'] = subj
-            html = msg + "</p></body></html>\n"
+            html = msg
             ts = TagStripper()
             ts.feed(html)
             txt = ts.get_collected_data()
+            print "sending: {0}".format(txt)
             part1 = MIMEText(txt, 'plain')
             part2 = MIMEText(html, 'html')
             message.attach(part1)
             message.attach(part2)
-            smtpo = smtplib.SMTP(smtp_server)
+            smtpo = smtplib.SMTP(server)
             smtpo.ehlo()
             smtpo.starttls()
             smtpo.login(sender.split('@', 1)[0], passwd)

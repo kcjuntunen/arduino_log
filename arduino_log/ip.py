@@ -2,53 +2,54 @@ import socket
 import fcntl
 import struct
 import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import HTMLParser
+# from email.mime.multipart import MIMEMultipart
+# from email.mime.text import MIMEText
+# import HTMLParser
+import emailer
 import time
 import json
 import array
 
-class TagStripper(HTMLParser.HTMLParser):
-    collected_data = ""
-    def __init__(self):
-        HTMLParser.HTMLParser.__init__(self)
+# class TagStripper(HTMLParser.HTMLParser):
+#     collected_data = ""
+#     def __init__(self):
+#         HTMLParser.HTMLParser.__init__(self)
 
-    def handle_data(self, data):
-        self.collected_data = self.collected_data + data
+#     def handle_data(self, data):
+#         self.collected_data = self.collected_data + data
 
-    def get_collected_data(self):
-        return self.collected_data
+#     def get_collected_data(self):
+#         return self.collected_data
 
-def send_email(subj, msg):
-    try:
-        sender = config_data["sender"]
-        passwd = config_data["eml_passwd"]
-        receivers = config_data["recipients"]
-        message = MIMEMultipart('alternative')
-        message['Subject'] = subj
-        message['From'] = (config_data["unit"] +
-                           " <no_real_email@nobody.com>")
-        message['To'] = ','.join(receivers)
-        html = msg
-        ts = TagStripper()
-        ts.feed(html)
-        txt = ts.get_collected_data()
-        part1 = MIMEText(txt, 'plain')
-        part2 = MIMEText(html, 'html')
-        message.attach(part1)
-        message.attach(part2)
-        print message.as_string()
-        smtpo = smtplib.SMTP(config_data["smtp_server"])
-        smtpo.ehlo()
-        smtpo.starttls()
-        smtpo.login(sender.split('@', 1)[0], passwd)
-        
-        smtpo.sendmail(sender, receivers, message.as_string())
-        smtpo.quit()
-        #print "Sent email"
-    except Exception, e:
-        print "Failure sending email. %s" % e
+# def send_email(subj, msg):
+#     try:
+#         sender = config_data["sender"]
+#         passwd = config_data["eml_passwd"]
+#         receivers = config_data["recipients"]
+#         message = MIMEMultipart('alternative')
+#         message['Subject'] = subj
+#         message['From'] = (config_data["unit"] +
+#                            " <no_real_email@nobody.com>")
+#         message['To'] = ','.join(receivers)
+#         html = msg
+#         ts = TagStripper()
+#         ts.feed(html)
+#         txt = ts.get_collected_data()
+#         part1 = MIMEText(txt, 'plain')
+#         part2 = MIMEText(html, 'html')
+#         message.attach(part1)
+#         message.attach(part2)
+#         print message.as_string()
+#         smtpo = smtplib.SMTP(config_data["smtp_server"])
+#         smtpo.ehlo()
+#         smtpo.starttls()
+#         smtpo.login(sender.split('@', 1)[0], passwd)
+
+#         smtpo.sendmail(sender, receivers, message.as_string())
+#         smtpo.quit()
+#         #print "Sent email"
+#     except Exception, e:
+#         print "Failure sending email. %s" % e
 
 def get_ip_address(ifname):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -76,19 +77,27 @@ def broadcast_ip():
         config_data = json.load(data_file)
 
     if config_data["broadcast_ip"]:
-        while 'wlan0' not in all_interfaces():
+        while config_data["iface"] not in all_interfaces():
+            print "`{0}' not found.".format(config_data["iface"])
             time.sleep(15)
-            message = """
-            <html>
-              <head></head>
-                <body>
-                  <img src=\"https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png\">
-                  <p>IP:" + get_ip_address('wlan0') + "
-                  </p>
-                </body>
-            </html>
+
+        message = """
+        <html>
+          <head></head>
+          <body>
+            <img src=\"http://icons.iconarchive.com/icons/alecive/flatwoken/512/Apps-Dialog-Shutdown-icon.png\" height=\"64\" width=\"64\">
+            <p>IP:""" + get_ip_address(str(config_data["iface"])) + """
+            </p>
+          </body>
+        </html>
             """
-            send_email("Unit: " + config_data["unit"] + " booted.", message)
+        emailer.send_email(config_data["smtp_server"],
+                           config_data["sender"],
+                           config_data["eml_passwd"],
+                           config_data["recipients"],
+                           "Unit: " + config_data["unit"] + " booted.",
+                           message)
+
     else:
         print("Not sending...")
 
